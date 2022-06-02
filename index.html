@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>cubble: An R Package for Organizing and Wrangling Multivariate Spatio-temporal Data</title>
+    <meta charset="utf-8" />
+    <meta name="date" content="2022-06-23" />
+    <script src="libs/header-attrs/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+    <link rel="stylesheet" href="other.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# cubble: An R Package for Organizing and Wrangling Multivariate Spatio-temporal Data
+]
+.author[
+### <div class="line-block">Sherry Zhang<br />
+<br />
+supervisors: Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langrené<br />
+<br />
+.pri[<a href="https://sherryzhang-user2022.netlify.app" class="uri">https://sherryzhang-user2022.netlify.app</a>]</div>
+]
+.date[
+### 2022-06-23
+]
+
+---
+
+
+
+
+
+
+
+
+# Multivariate spatio-temporal data
+
+
+
+
+???
+
+* Thanks everyone for coming 
+
+* The title of my talk today is
+
+* In my supervisor team are
+
+* Here is the link to this slides, in case you would like to go back and forth while I'm talking
+
+* MST data are commonly collected in different areas  
+
+* some examples of these include 
+
+  * climate variables measured by weather stations over time, 
+  
+  * pollutant data monitored by air quality meters, and 
+  
+  * river level data recorded by river gauges over different periods.
+
+
+---
+
+# Multivariate spatio-temporal data
+
+
+
+
+???
+
+* Conceptually MST data can be thought of as a data cube with three axes: site, time, and variable
+
+
+
+---
+
+# Multivariate spatio-temporal data
+
+
+
+???
+
+* And to analyse this type of data, we can
+
+  * fix the time to look at the spatial distribution of variables; 
+  * fix the location to look at the temporal variation, like trend and seasonality; or 
+  * look at relationship among variables across time and space
+
+---
+
+class: inverse, center, middle
+
+# Topic 2
+
+## A new tidy data structure to support exploration of multivariate spatio-temporal data
+
+
+
+
+---
+
+# Motivation 
+
+.pull-left[
+
+Data from National Oceanic and Atmospheric Administration (NOAA)
+
+
+
+
+
+]
+
+.pull-right-larger[
+
+* Multivariate spatio-temporal data usually come in multiple pieces
+
+* This makes it easy for data collection but not for data analysis
+
+* A new data structure, `cubble`, that
+  * organises different pieces in a single data object
+  * allows users to access variables easily in the analysis
+
+* Three examples:
+  * Interactive graphics
+  * Glyph map
+  * Data with hierarchical structure
+]
+
+???
+
+* Now let's change the topic and look at some climate data
+
+* NOAA hosts worldwide climate data
+
+* To get data from there, you will first need to query the locations and variables of interest. This gives a spatial table on the top
+
+* Then you will query the temporal information based on the spatial table
+
+* This is an example where MST
+
+* Today I will introduce a new data structure, cubble, that allows you to organise spatio-temporal data in a different way
+
+* so that different pieces of information all live in a single data object and users can easily access variables during the analysis
+
+* I will illustrate the data structure with three examples in this talk
+
+---
+
+# Cubble basics
+
+
+
+???
+
+* The way cubble work is to organise the data in two forms
+
+* Here I use two colors to represent the spatial and temporal variables
+
+* The nested cubble has each location in a row 
+
+* It has spatial variables like longitude, latitude, among others and temporal variables all nested in a ts column. 
+
+* In the long cubble, each row is identified by a combination of location and date. 
+  
+* spatial variables are stored separately as the data attributes, which I will later show you through the code
+  
+---
+# Switching focus between time and space
+
+
+
+???
+
+* Here is how you can switch between the nested and long form
+
+* The verb `stretch()` switches the nested cubble into the long form and
+
+* This change the focus from the spatial to temporal aspect and the resulting long form can be used to summarise the temporal aspect of the data.
+
+---
+# Switching focus between time and space
+
+
+
+???
+
+* The inverse of `stretch()` is `tamp()`, which switches the long cubble into a nested one
+
+* This changes the focus back to the spatial aspect and can be used to view the spatial distribution of variables on the map
+
+---
+
+# Creating a cubble
+
+.pull-left[
+
+
+
+
+
+
+]
+
+.pull-right[
+
+
+
+```r
+cb_nested &lt;- raw %&gt;%
+  as_cubble(key = id, 
+            index = date, 
+            coords = c(long, lat))
+```
+]
+
+???
+
+* Now I'm going to show you how cubble looks like in the code
+
+* With the spatial and temporal table I show you early one, there are different ways you can cast them into a cubble
+
+* The first one joins the two tables by id into a combined data, and
+
+* The second one uses a rowwise structure to query the temporal variables directly into a list column, you can see the header here it is a rowwise data frame and each element in the `ts` column has 366 rows and four variables
+
+* With either form, you can use `as_cubble` function and supply three arguments, the key, the index, and the coordinates, which are the three important information in MST data
+
+
+---
+
+# Cubble summary (1/2)
+
+
+```r
+cb_nested
+```
+
+
+
+???
+
+* By default, this create a nested cubble. 
+
+* There is a header summary on cubble objects, here it tells you
+
+
+--
+
+- There are .sec[638] stations in this data 
+- Temporal variables are `date, prcp, tmax`, and `tmin`
+- Spatial variables: `lat, long, elev, name`, and `wmo_id`
+- Each temporal component is a tibble, .sec[366] rows for each station
+
+---
+
+# Cubble summary (2/2)
+
+.pull-left[
+
+
+
+```r
+cb_long &lt;- cb_nested %&gt;% stretch()
+cb_long
+```
+
+
+]
+
+???
+
+* This is what the long cubble looks like
+
+---
+# Cubble summary (2/2)
+
+
+.pull-left[
+
+
+
+```r
+cb_long &lt;- cb_nested %&gt;% stretch()
+cb_long
+```
+
+
+* Notice: `# spatial: lat [dbl], long [dbl], elev [dbl], name [chr], wmo_id [dbl]`
+
+
+]
+
+--
+
+.pull-right[
+
+```r
+attr(cb_long, "spatial")
+# or you can use: spatial(climate_long)
+```
+
+]
+
+
+---
+# Example 1: creating interactive graphics
+
+
+
+???
+
+* With the two forms and the verbs I just introduced, I will now show you how to use cubble to link a map view with a temporal display
+
+* Here the example is to explore seasonality of temperature at various locations in Australia
+
+* I will first illustrate how the linking in interactive graphic works with cubble before showing you the graphic.
+
+* A map can be crated the nested cubble where each point corresponds to a row and color by a particular variable of interest
+
+* With the long cubble, you can make a temporal display. 
+
+* In this illustration, the rows that share the same id in the long form is a line and the same color as used as the map
+
+* Once a point is selected on the map, it will activate the corresponding row in the nested cubble
+
+---
+
+# Example 1: creating interactive graphics
+
+
+
+???
+
+* The nested cubble will then be linked to the long cubble and the rows in the long cubble with the same id will be activated.
+
+
+---
+# Example 1: creating interactive graphics
+
+
+
+???
+
+* These activated rows in the long form will then highlight selected time series in the plot
+
+* This linking also works in the other direction, where you can make a selection on the temporal display and it wil highlight the corresponding location on the map
+
+---
+class: inverse, middle
+
+
+
+
+???
+
+* Here I record a video to show how select and highlight looks like in the plot. 
+
+* The locations are colored by monthly variation of temperature difference
+
+* This is a measure of how the temperature difference, maximum - minimum, varies across each month. For example, if you have a location with almost constant difference throughout the year, it will have a small value.
+
+* Rather than showing a line of in the temporal display, here we use a ribbon, where the upper bound is the maximum temperature and ...
+
+* Here I first select a point on the right with the lowest temperature in August and you can see it corresponds to the thredbo and it has a fairly constant temperature difference throughout the year, although fiarly low
+
+* Another point I'm interesting to explore is Mount Elizabeth since it has a large variance in temperature difference and I'm interested to know how the maximum and minimum temperature look like in each month. 
+
+* We can see here the large variance comes from its wide gap in the winter season from June to August
+---
+
+# Transformation to glyphmap
+
+&lt;!-- (context of problem): compare seasonal temperature for two periods  --&gt;
+
+&lt;!-- drop missing --&gt;
+&lt;!-- migrate  --&gt;
+&lt;!-- transform --&gt;
+
+&lt;!-- What if you want to work with  both spatial or temporal variables? --&gt;
+
+.pull-left[
+
+
+]
+
+???
+
+* With cubble, you can also do some spatio-temporal transformation and the particular one we will talk about today is the glyph map. 
+
+* A glyph map requires both spatial and temporal variables for the transformation.
+
+* In this transformation, you need longitude, latitude, and the variable of interest across time
+
+* In cubble you can temporarily move some spatial variables into the long form using the verb `migrate()`
+
+* Here is the illustrate and the code shows you with the long form, you migrate long and lat
+
+
+--
+
+.pull-right-larger[
+
+
+
+
+```r
+cb_migrated &lt;- cb_long %&gt;% 
+  migrate(long, lat)
+cb_migrated
+```
+]
+
+
+---
+
+# Example 2: Australian temperature revisit
+
+
+
+
+???
+
+* Here is a much involved example of comparing Australia temperature in two time periods
+
+* The data used for this example has a simlar structure as before has a long period that dated back to the 70s, so we can compare how the maximum temperature looks like in the past and nowadays
+
+* The diagram here shows how different steps in the data analysis can be chained together with cubble 
+
+* Start with all Australia data, we can first filter out the NSW stations in the space, and then stretch to the long form to filter on the two time periods
+
+* Then with the long form, the maximum temperature is summarised into monthly average
+
+* In step 4 we switch back to the nested form to find that some stations don't have history records and drop those
+
+* In step 5, we switch to the long form again and migrate the longitude and latitude to prepare for the glyph map transformation. 
+
+* And lastly the glyphmap transformation gives you a map.
+
+---
+
+
+.pull-left-larger[
+
+
+
+
+
+]
+
+
+.pull-right[
+
+]
+
+???
+
+* This is the code version of the previous diagram and the functions highlighted here are I developed in cubble
+
+* In the plot, I show an enlarged legend of one station Cobar
+
+* In each glyph, I plot the averaged maximum temperature for September to February for the two periods
+
+* One information I read from this plot is in the past, the average maximum temperature from December to February are almost the same, while these days, January stands out to be hotter for the inland stations
+
+
+---
+
+# Working with hierarchical data (1/2)
+
+
+
+???
+
+* MST data can have a grouping structure on the space
+
+* Sometimes, rather than exploring the pattern of each individual location, we may want to explore multiple locations together as a group.
+
+* For our climate data, 638 glyph maps would be too much to look at and we can divide them into clusters and view the glyph map of each cluster.
+
+* Here the station nested has a new column called cluster. This is the grouping variable and in the later example we will be using a kmeans cluster to allocate stations into 20 groups
+
+* The cubble function `switch_key()` will reorganise the cubble into the cluster level. Now rather than each station forms a row, each cluster forms a row and you can add other cluster level variables in the column, for example latitude and longitude of cluster centroid. All the station level spatial variables are now nested in the .val column
+
+---
+
+# Working with hierarchical data (2/2)
+
+
+
+???
+
+* To get access to the long form, you can still use the `stretch()` verb
+---
+background-image: url("figures/diagrams/diagrams.014.png")
+background-position: bottom right
+background-size: 280px, 280px
+
+# Example 3: Australian rainfall
+
+
+
+
+```r
+station_nested
+```
+
+???
+
+* This is how our station_nested data look like
+
+* We have similar spatial variables with a new cluster column
+
+* The precipitation has already been summarised into weekly mean in the ts column and it has 53 rows and 2 columns, wk and prcp
+
+---
+background-image: url("figures/diagrams/diagrams.014.png")
+background-position: top right
+background-size: 280px, 280px
+
+.pull-left-larger[
+
+
+
+
+]
+
+.pull-right[
+
+
+]
+
+???
+
+- With station_nested, you can use the `switch_key()` to change it to the cluster level. 
+
+- `get_centroid()` in cubble will find the centroid of each cluster
+
+- Then this two datasets can be used to view the cluster membership of each locations on the map
+
+---
+background-image: url("figures/diagrams/diagrams.014.png")
+background-position: top right
+background-size: 280px, 280px
+
+.pull-left-larger[
+
+
+
+
+
+
+]
+
+.pull-right[
+
+
+]
+
+
+
+---
+class: inverse, middle
+
+# More you can do with cubble
+
+* Merge two data sources by spatial and temporal similarities
+
+--
+
+* Alternative objects accepted as components:
+
+  * Spatial data can be represented as an .inverse-code[sf] or .inverse-code[S2 LngLat], spatial objects
+
+  * Temporal data can be represented as a .inverse-code[tsibble], a special temporal data object
+
+--
+
+* Input data can be of various forms, including .inverse-code[netCDF] and .inverse-code[tibble variates] (i.e. grouped and rowwise data frame)
+
+---
+background-image: url("figures/3cubes-in-one.png")
+background-position: 90% 70%
+background-size: 280px, 280px
+
+class: inverse,  middle
+
+# Additional Information
+
+Slides created via the R package [.inverse-code[xaringan]](https://github.com/yihui/xaringan) and [.inverse-code[xaringanthemer]](https://github.com/gadenbuie/xaringanthemer), available at 
+
+.center[https://sherryzhang-user2022.netlify.app]
+
+&lt;br&gt;
+
+.inverse-code[<svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:currentColor;overflow:visible;position:relative;"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg>] cubble package: https://github.com/huizezhang-sherry/cubble
+
+&lt;br&gt;
+
+H. Sherry Zhang [.inverse-code[<svg aria-hidden="true" role="img" viewBox="0 0 496 512" style="height:1em;width:0.97em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:currentColor;overflow:visible;position:relative;"><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>]](https://github.com/huizezhang-sherry)
+
+Supervisors: Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langrené
+
+
+
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false,
+"ratio": "16:9",
+"navigation": {
+"scroll": false,
+"touch": true,
+"click": false
+}
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

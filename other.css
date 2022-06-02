@@ -1,0 +1,29 @@
+.sec{
+  color: var(--secondary)
+}
+
+.pri{
+  color: var(--primary);
+}
+
+.inverse-code{
+  color: #FFEECF;
+  font-family: 'Source Code Pro'
+}
+
+.pull-right-larger {
+  float: right;
+  width: 53%;
+}
+
+.pull-left-larger{
+  float: left;
+  width: 53%;
+}
+
+
+.center{
+  text-align: "center";
+  font-size: 35px;
+  color: "EEFFCF";
+}
