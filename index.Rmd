@@ -3,7 +3,7 @@ title: "cubble: An R Package for Organizing and Wrangling Multivariate Spatio-te
 author: |
   | Sherry Zhang
   | 
-  | Supervisors: Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langrené
+  | Collaborators: Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langrené
   | 
   | .pri[https://sherryzhang-user2022.netlify.app]
 date: "2022-06-23"
@@ -29,12 +29,13 @@ knitr::opts_chunk$set(echo = FALSE,
                       warning = FALSE, 
                       cache = TRUE, 
                       comment = NA,
-                      fig.align='center', eval = FALSE)
+                      fig.align='center')
 
-options( pillar.print_max = 5, pillar.print_min = 5, width = 45)
+options(pillar.print_max = 5, pillar.print_min = 5, width = 45)
 library(tidyverse)
 library(cubble)
 library(flair)
+library(sf)
 ```
 
 
@@ -62,8 +63,20 @@ style_duo_accent(
 
 # Multivariate spatio-temporal data
 
-```{r out.height = 550, out.width=1000}
-knitr::include_graphics("figures/diagrams/diagrams.001.png")
+```{r}
+raw <- weatherdata::historical_tmax %>% 
+  filter(between(stringr::str_sub(id, 7, 8), 46, 75))
+
+raw_stations <- raw %>% 
+  select(id: wmo_id) %>% 
+  ungroup()
+
+stations_sf <- raw_stations %>%
+  sf::st_as_sf(coords = c("long", "lat"), crs = 4283, remove = FALSE)
+```
+
+```{r echo = TRUE}
+stations_sf 
 ```
 
 
@@ -92,8 +105,12 @@ knitr::include_graphics("figures/diagrams/diagrams.001.png")
 
 # Multivariate spatio-temporal data
 
-```{r out.height = 550, out.width=1000}
-knitr::include_graphics("figures/diagrams/diagrams.009.png")
+```{r}
+ts <- raw %>% face_temporal() %>% tsibble::as_tsibble(key = id, index = date)
+```
+
+```{r echo = TRUE}
+ts
 ```
 
 
@@ -107,8 +124,34 @@ knitr::include_graphics("figures/diagrams/diagrams.009.png")
 
 # Multivariate spatio-temporal data
 
-```{r out.height = 550, out.width=1000}
-knitr::include_graphics("figures/diagrams/diagrams.010.png")
+When left joining an `sf` object with a `tsibble`, the `tsibble` class gets lost: 
+
+```{r echo = TRUE, echo = TRUE}
+out <- stations_sf %>% left_join(ts, by = "id")
+class(out)
+```
+
+When left joining the other way around, you lost the `sf` class:
+
+```{r eval = FALSE, echo = TRUE}
+out2 <- ts %>% left_join(stations_sf, by = "id")
+out2 %>% st_filter(nsw, .predicate = st_within)
+```
+
+Error in UseMethod("st_filter") :
+   no applicable method for 'st_filter' applied to an object of class "c('tbl_ts', 'tbl_df', 'tbl', 'data.frame')"
+
+When you finally have both `sf` and `tsibble` in your class, the `sf` class is gone when apply a method from `tsibble`: 
+
+```{r eval = FALSE, echo = TRUE}
+out3 <- out2 %>% 
+  filter(lubridate::year(date) %in% c(1971:1975, 2016:2020)) %>% 
+  filter(!(lubridate::year(date) == 1971 & lubridate::month(date) == 2)) %>% 
+  st_as_sf()
+out3
+class(out3)
+
+out3 %>% tsibble::fill_gaps()
 ```
 
 ???
@@ -123,35 +166,13 @@ knitr::include_graphics("figures/diagrams/diagrams.010.png")
 
 # Motivation 
 
-.pull-left[
-
-Data from National Oceanic and Atmospheric Administration (NOAA)
-
-```{r}
-knitr::include_graphics("figures/spatial.png")
-```
-
-```{r out.width="50%"}
-knitr::include_graphics("figures/temporal.png")
-```
-
-]
-
-.pull-right-larger[
-
 * Multivariate spatio-temporal data usually come in multiple pieces
 
-* This makes it easy for data collection but not for data analysis
+* Existing spatial and temporal data structure don't seem to live happily together
 
 * A new data structure, `cubble`, that
   * organises different pieces in a single data object
   * allows users to access variables easily in the analysis
-
-* Three examples:
-  * Interactive graphics
-  * Glyph map
-  * Data with hierarchical structure
-]
 
 ???
 
@@ -174,7 +195,8 @@ knitr::include_graphics("figures/temporal.png")
 ---
 
 # Cubble basics
-```{r out.height=575}
+
+```{r out.height=575, eval = FALSE}
 knitr::include_graphics("figures/diagrams/diagrams.003.png")
 ```
 
@@ -196,7 +218,7 @@ knitr::include_graphics("figures/diagrams/diagrams.003.png")
 ---
 # Switching focus between time and space
 
-```{r out.height=575}
+```{r out.height=575, eval = FALSE}
 knitr::include_graphics("figures/diagrams/diagrams.004.png")
 ```
 
@@ -211,7 +233,7 @@ knitr::include_graphics("figures/diagrams/diagrams.004.png")
 ---
 # Switching focus between time and space
 
-```{r out.height=575}
+```{r out.height=575, eval = FALSE}
 knitr::include_graphics("figures/diagrams/diagrams.013.png")
 ```
 
@@ -225,30 +247,14 @@ knitr::include_graphics("figures/diagrams/diagrams.013.png")
 
 # Creating a cubble
 
-.pull-left[
-
-```{r}
-knitr::include_graphics("figures/raw.png")
-load(here::here("data/raw.rda"))
-```
-
-```{r}
-knitr::include_graphics("figures/raw-2.png")
-```
-
-
-]
-
-.pull-right[
-
-
 ```{r echo = TRUE}
-cb_nested <- raw %>%
-  as_cubble(key = id, 
-            index = date, 
-            coords = c(long, lat))
+weather <- as_cubble(
+  list(spatial = stations_sf, temporal = ts),
+  key = id, 
+  index = date, 
+  coords = c(long, lat))
 ```
-]
+
 
 ???
 
@@ -268,12 +274,12 @@ cb_nested <- raw %>%
 # Cubble summary (1/2)
 
 ```{r eval = FALSE, echo = TRUE}
-cb_nested
+weather
 ```
 
 ```{r}
 options(width = 345)
-cb_nested
+weather
 ```
 
 ???
@@ -296,13 +302,13 @@ cb_nested
 
 .pull-left[
 ```{r}
-cb_long <- cb_nested %>% stretch()
+weather_long <- weather %>% face_temporal()
 options(width = 45)
 ```
 
 ```{r echo = TRUE}
-cb_long <- cb_nested %>% stretch()
-cb_long
+weather_long <- weather %>% face_temporal()
+weather_long
 ```
 
 
@@ -318,13 +324,13 @@ cb_long
 
 .pull-left[
 ```{r}
-cb_long <- cb_nested %>% stretch()
+weather_long <- weather %>% face_temporal()
 options(width = 45)
 ```
 
 ```{r echo = TRUE}
-cb_long <- cb_nested %>% stretch()
-cb_long
+weather_long <- weather %>% face_temporal()
+weather_long
 ```
 
 
@@ -337,85 +343,13 @@ cb_long
 
 .pull-right[
 ```{r echo = TRUE, results='hold'}
-attr(cb_long, "spatial")
+attr(weather_long, "spatial")
 # or you can use: spatial(climate_long)
 ```
 
 ]
 
 
----
-# Example 1: creating interactive graphics
-
-```{r}
-knitr::include_graphics("figures/diagrams/diagrams.008.png")
-```
-
-???
-
-* With the two forms and the verbs I just introduced, I will now show you how to use cubble to link a map view with a temporal display
-
-* Here the example is to explore seasonality of temperature at various locations in Australia
-
-* I will first illustrate how the linking in interactive graphic works with cubble before showing you the graphic.
-
-* A map can be crated the nested cubble where each point corresponds to a row and color by a particular variable of interest
-
-* With the long cubble, you can make a temporal display. 
-
-* In this illustration, the rows that share the same id in the long form is a line and the same color as used as the map
-
-* Once a point is selected on the map, it will activate the corresponding row in the nested cubble
-
----
-
-# Example 1: creating interactive graphics
-
-```{r}
-knitr::include_graphics("figures/diagrams/diagrams.017.png")
-```
-
-???
-
-* The nested cubble will then be linked to the long cubble and the rows in the long cubble with the same id will be activated.
-
-
----
-# Example 1: creating interactive graphics
-
-```{r}
-knitr::include_graphics("figures/diagrams/diagrams.018.png")
-```
-
-???
-
-* These activated rows in the long form will then highlight selected time series in the plot
-
-* This linking also works in the other direction, where you can make a selection on the temporal display and it wil highlight the corresponding location on the map
-
----
-class: inverse, middle
-
-```{r out.height=550}
-knitr::include_url("figures/interactive-graphic.mov", height = "400px")
-```
-
-
-???
-
-* Here I record a video to show how select and highlight looks like in the plot. 
-
-* The locations are colored by monthly variation of temperature difference
-
-* This is a measure of how the temperature difference, maximum - minimum, varies across each month. For example, if you have a location with almost constant difference throughout the year, it will have a small value.
-
-* Rather than showing a line of in the temporal display, here we use a ribbon, where the upper bound is the maximum temperature and ...
-
-* Here I first select a point on the right with the lowest temperature in August and you can see it corresponds to the thredbo and it has a fairly constant temperature difference throughout the year, although fiarly low
-
-* Another point I'm interesting to explore is Mount Elizabeth since it has a large variance in temperature difference and I'm interested to know how the maximum and minimum temperature look like in each month. 
-
-* We can see here the large variance comes from its wide gap in the winter season from June to August
 ---
 
 # Transformation to glyphmap
@@ -429,7 +363,7 @@ knitr::include_url("figures/interactive-graphic.mov", height = "400px")
 <!-- What if you want to work with  both spatial or temporal variables? -->
 
 .pull-left[
-```{r out.height = 400, out.width = 500}
+```{r out.height = 400, out.width = 500, eval = FALSE}
 knitr::include_graphics("figures/migrate.png")
 ```
 
@@ -457,8 +391,8 @@ options(width = 60)
 
 
 ```{r echo = TRUE}
-cb_migrated <- cb_long %>% 
-  migrate(long, lat)
+cb_migrated <- weather_long %>% 
+  unfold(long, lat)
 cb_migrated
 ```
 ]
@@ -467,11 +401,6 @@ cb_migrated
 ---
 
 # Example 2: Australian temperature revisit
-
-
-```{r out.height = 525}
-knitr::include_graphics("figures/diagrams/diagrams.005.png")
-```
 
 ???
 
@@ -499,13 +428,13 @@ knitr::include_graphics("figures/diagrams/diagrams.005.png")
 ```{r glyph, eval = FALSE, include = FALSE}
 tmax <- DATA %>% 
   filter(NSW_STATIONS) %>% 
-  stretch() %>% 
+  face_temporal() %>% 
   filter(DATE_IN_TWO_GROUPS) %>% 
   summarise() %>% 
-  tamp() %>% 
+  face_spatial() %>% 
   filter(NO_MISSING_VALUE) %>% 
-  stretch() %>% 
-  migrate(long, lat)
+  face_temporal() %>% 
+  unfold(long, lat)
 
 tmax %>% 
   ggplot(aes(x_minor = lubridate::month(date), 
@@ -516,7 +445,7 @@ tmax %>%
   geom_glyph()
 ```
 
-```{r echo = FALSE}
+```{r echo = FALSE, eval = FALSE}
 flair::decorate_chunk("glyph", eval = FALSE) %>%
   flair::flair("stretch", background = "#FFEECF") %>% 
   flair::flair("tamp", background = "#FFEECF") %>% 
@@ -529,11 +458,6 @@ flair::decorate_chunk("glyph", eval = FALSE) %>%
 ]
 
 
-.pull-right[
-```{r}
-knitr::include_graphics("figures/glyphmap.png")
-```
-]
 
 ???
 
@@ -550,9 +474,13 @@ knitr::include_graphics("figures/glyphmap.png")
 
 # Working with hierarchical data (1/2)
 
-```{r out.height="90%"}
-knitr::include_graphics("figures/diagrams/diagrams.006.png")
+```{r}
+map <- ozmaps::abs_ste %>% rmapshaper::ms_simplify()
+nsw <- map %>% filter(NAME == "New South Wales")
 ```
+
+
+
 
 ???
 
@@ -570,123 +498,9 @@ knitr::include_graphics("figures/diagrams/diagrams.006.png")
 
 # Working with hierarchical data (2/2)
 
-```{r out.height="90%"}
-knitr::include_graphics("figures/diagrams/diagrams.007.png")
-```
-
 ???
 
-* To get access to the long form, you can still use the `stretch()` verb
----
-background-image: url("figures/diagrams/diagrams.014.png")
-background-position: bottom right
-background-size: 280px, 280px
-
-# Example 3: Australian rainfall
-
-```{r}
-load(here::here("data/station_nested.rda"))
-station_nested <- station_nested %>% filter(id != "ASN00099005")
-options(width = 145)
-```
-
-```{r echo = TRUE}
-station_nested
-```
-
-???
-
-* This is how our station_nested data look like
-
-* We have similar spatial variables with a new cluster column
-
-* The precipitation has already been summarised into weekly mean in the ts column and it has 53 rows and 2 columns, wk and prcp
-
----
-background-image: url("figures/diagrams/diagrams.014.png")
-background-position: top right
-background-size: 280px, 280px
-
-.pull-left-larger[
-```{r hier-cluster, eval = FALSE}
-cluster_nested <- station_nested %>% 
-  switch_key(cluster) %>% 
-  get_centroid() 
-
-ggplot() + 
-  geom_sf(data = ozmaps::abs_ste, ...) + 
-  geom_point(data = station_nested, aes(...)) + 
-  ggforce::geom_mark_hull(
-    data = cluster_nested %>% ..., 
-    aes(...))
-```
-
-
-```{r}
-flair::decorate_chunk("hier-cluster", eval = FALSE) %>% 
-  flair::flair("station_nested", background = "#FFEECF") %>% 
-  flair::flair("cluster_nested", background = "#C88DA3") %>%
-  flair::knit_print.with_flair()
-```
-]
-
-.pull-right[
-```{r}
-knitr::include_graphics("figures/hier-cluster.png")
-```
-
-]
-
-???
-
-- With station_nested, you can use the `switch_key()` to change it to the cluster level. 
-
-- `get_centroid()` in cubble will find the centroid of each cluster
-
-- Then this two datasets can be used to view the cluster membership of each locations on the map
-
----
-background-image: url("figures/diagrams/diagrams.014.png")
-background-position: top right
-background-size: 280px, 280px
-
-.pull-left-larger[
-
-```{r hier-glyph, eval = FALSE}
-cluster_nested <- station_nested %>% 
-  switch_key(cluster) %>%
-  get_centroid()
-
-cluster_long <- cluster_nested %>% 
-  stretch() %>% 
-  migrate(cent_long, cent_lat)
-
-ggplot() + 
-  geom_sf(data = ozmaps::abs_ste, ...) + 
-  geom_glyph(data = cluster_long, aes(...)) + 
-  geom_text(data = cluster_nested, aes(...)) + 
-  ...
-```
-
-```{r}
-flair::decorate_chunk("hier-glyph", eval = FALSE) %>% 
-  flair::flair("station_nested", background = "#FFEECF") %>% 
-  flair::flair("cluster_nested", background = "#C88DA3") %>%
-  flair::flair("cluster_long", background = "#978F9D") %>%
-  flair::knit_print.with_flair()
-```
-
-
-]
-
-.pull-right[
-```{r}
-knitr::include_graphics("figures/hier-glyph.png")
-```
-
-]
-
-
+* To get access to the long form, you can still use the `face_temporal()` verb
 
 ---
 class: inverse, middle
@@ -728,7 +542,7 @@ Slides created via the R package [.inverse-code[xaringan]](https://github.com/yi
 
 H. Sherry Zhang [.inverse-code[`r fontawesome::fa("github")`]](https://github.com/huizezhang-sherry)
 
-Supervisors: Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langrené
+Collaborators: Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langrené
 
 
 

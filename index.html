@@ -18,7 +18,7 @@ class: center, middle, inverse, title-slide
 .author[
 ### <div class="line-block">Sherry Zhang<br />
 <br />
-supervisors: Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langrené<br />
+Collaborators: Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langrené<br />
 <br />
 .pri[<a href="https://sherryzhang-user2022.netlify.app" class="uri">https://sherryzhang-user2022.netlify.app</a>]</div>
 ]
@@ -38,6 +38,29 @@ supervisors: Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langrené<
 # Multivariate spatio-temporal data
 
 
+
+
+```r
+stations_sf 
+```
+
+```
+Simple feature collection with 47 features and 6 fields
+Geometry type: POINT
+Dimension:     XY
+Bounding box:  xmin: 141.2652 ymin: -36.9113 xmax: 153.3633 ymax: -28.9786
+Geodetic CRS:  GDA94
+# A tibble: 47 × 7
+  id           long   lat  elev name   wmo_id
+* &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;   &lt;dbl&gt;
+1 ASN00047016  141. -34.0    43 lake …  94692
+2 ASN00047019  142. -32.4    61 menin…  94694
+3 ASN00048015  147. -30.0   115 brewa…  95512
+4 ASN00048027  146. -31.5   260 cobar…  94711
+5 ASN00048031  149. -29.5   145 colla…  95520
+# … with 42 more rows, and 1 more variable:
+#   geometry &lt;POINT [°]&gt;
+```
 
 
 ???
@@ -68,6 +91,23 @@ supervisors: Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langrené<
 
 
 
+```r
+ts
+```
+
+```
+# A tibble: 1,111,407 × 3
+  id          date        tmax
+  &lt;chr&gt;       &lt;date&gt;     &lt;dbl&gt;
+1 ASN00047016 1966-11-01  12.8
+2 ASN00047016 1966-11-02  NA  
+3 ASN00047016 1966-11-03  NA  
+4 ASN00047016 1966-11-04  NA  
+5 ASN00047016 1966-11-05  NA  
+# … with 1,111,402 more rows
+```
+
+
 ???
 
 * Conceptually MST data can be thought of as a data cube with three axes: site, time, and variable
@@ -78,7 +118,43 @@ supervisors: Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langrené<
 
 # Multivariate spatio-temporal data
 
+When left joining an `sf` object with a `tsibble`, the `tsibble` class gets lost: 
 
+
+```r
+out &lt;- stations_sf %&gt;% left_join(ts, by = "id")
+class(out)
+```
+
+```
+[1] "sf"         "tbl_df"     "tbl"       
+[4] "data.frame"
+```
+
+When left joining the other way around, you lost the `sf` class:
+
+
+```r
+out2 &lt;- ts %&gt;% left_join(stations_sf, by = "id")
+out2 %&gt;% st_filter(nsw, .predicate = st_within)
+```
+
+Error in UseMethod("st_filter") :
+   no applicable method for 'st_filter' applied to an object of class "c('tbl_ts', 'tbl_df', 'tbl', 'data.frame')"
+
+When you finally have both `sf` and `tsibble` in your class, the `sf` class is gone when apply a method from `tsibble`: 
+
+
+```r
+out3 &lt;- out2 %&gt;% 
+  filter(lubridate::year(date) %in% c(1971:1975, 2016:2020)) %&gt;% 
+  filter(!(lubridate::year(date) == 1971 &amp; lubridate::month(date) == 2)) %&gt;% 
+  st_as_sf()
+out3
+class(out3)
+
+out3 %&gt;% tsibble::fill_gaps()
+```
 
 ???
 
@@ -90,44 +166,15 @@ supervisors: Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langrené<
 
 ---
 
-class: inverse, center, middle
-
-# Topic 2
-
-## A new tidy data structure to support exploration of multivariate spatio-temporal data
-
-
-
-
----
-
 # Motivation 
-
-.pull-left[
-
-Data from National Oceanic and Atmospheric Administration (NOAA)
-
-
-
-
-
-]
-
-.pull-right-larger[
 
 * Multivariate spatio-temporal data usually come in multiple pieces
 
-* This makes it easy for data collection but not for data analysis
+* Existing spatial and temporal data structure don't seem to live happily together
 
 * A new data structure, `cubble`, that
   * organises different pieces in a single data object
   * allows users to access variables easily in the analysis
-
-* Three examples:
-  * Interactive graphics
-  * Glyph map
-  * Data with hierarchical structure
-]
 
 ???
 
@@ -150,6 +197,7 @@ Data from National Oceanic and Atmospheric Administration (NOAA)
 ---
 
 # Cubble basics
+
 
 
 
@@ -195,26 +243,15 @@ Data from National Oceanic and Atmospheric Administration (NOAA)
 
 # Creating a cubble
 
-.pull-left[
-
-
-
-
-
-
-]
-
-.pull-right[
-
-
 
 ```r
-cb_nested &lt;- raw %&gt;%
-  as_cubble(key = id, 
-            index = date, 
-            coords = c(long, lat))
+weather &lt;- as_cubble(
+  list(spatial = stations_sf, temporal = ts),
+  key = id, 
+  index = date, 
+  coords = c(long, lat))
 ```
-]
+
 
 ???
 
@@ -235,10 +272,28 @@ cb_nested &lt;- raw %&gt;%
 
 
 ```r
-cb_nested
+weather
 ```
 
 
+```
+Simple feature collection with 47 features and 7 fields
+Geometry type: POINT
+Dimension:     XY
+Bounding box:  xmin: 141.2652 ymin: -36.9113 xmax: 153.3633 ymax: -28.9786
+Geodetic CRS:  GDA94
+# cubble:   id [47]: nested form
+# bbox:     [141.26, -36.92, 153.37, -28.97]
+# temporal: date [date], tmax [dbl]
+  id           long   lat  elev name                     wmo_id            geometry ts                   
+  &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;                     &lt;dbl&gt;         &lt;POINT [°]&gt; &lt;list&gt;               
+1 ASN00047016  141. -34.0    43 lake victoria storage     94692 (141.2652 -34.0398) &lt;tibble [20,150 × 2]&gt;
+2 ASN00047019  142. -32.4    61 menindee post office      94694 (142.4173 -32.3937) &lt;tibble [23,011 × 2]&gt;
+3 ASN00048015  147. -30.0   115 brewarrina hospital       95512 (146.8651 -29.9614) &lt;tibble [20,819 × 2]&gt;
+4 ASN00048027  146. -31.5   260 cobar mo                  94711  (145.8294 -31.484) &lt;tibble [21,795 × 2]&gt;
+5 ASN00048031  149. -29.5   145 collarenebri (albert st)  95520 (148.5818 -29.5407) &lt;tibble [20,819 × 2]&gt;
+# … with 42 more rows
+```
 
 ???
 
@@ -263,8 +318,24 @@ cb_nested
 
 
 ```r
-cb_long &lt;- cb_nested %&gt;% stretch()
-cb_long
+weather_long &lt;- weather %&gt;% face_temporal()
+weather_long
+```
+
+```
+# cubble:  date, id [47]: long form
+# bbox:    [141.26, -36.92, 153.37, -28.97]
+# spatial: long [dbl], lat [dbl], elev
+#   [dbl], name [chr], wmo_id [dbl],
+#   geometry [POINT [°]]
+  id          date        tmax
+  &lt;chr&gt;       &lt;date&gt;     &lt;dbl&gt;
+1 ASN00047016 1966-11-01  12.8
+2 ASN00047016 1966-11-02  NA  
+3 ASN00047016 1966-11-03  NA  
+4 ASN00047016 1966-11-04  NA  
+5 ASN00047016 1966-11-05  NA  
+# … with 1,085,039 more rows
 ```
 
 
@@ -283,8 +354,24 @@ cb_long
 
 
 ```r
-cb_long &lt;- cb_nested %&gt;% stretch()
-cb_long
+weather_long &lt;- weather %&gt;% face_temporal()
+weather_long
+```
+
+```
+# cubble:  date, id [47]: long form
+# bbox:    [141.26, -36.92, 153.37, -28.97]
+# spatial: long [dbl], lat [dbl], elev
+#   [dbl], name [chr], wmo_id [dbl],
+#   geometry [POINT [°]]
+  id          date        tmax
+  &lt;chr&gt;       &lt;date&gt;     &lt;dbl&gt;
+1 ASN00047016 1966-11-01  12.8
+2 ASN00047016 1966-11-02  NA  
+3 ASN00047016 1966-11-03  NA  
+4 ASN00047016 1966-11-04  NA  
+5 ASN00047016 1966-11-05  NA  
+# … with 1,085,039 more rows
 ```
 
 
@@ -298,77 +385,26 @@ cb_long
 .pull-right[
 
 ```r
-attr(cb_long, "spatial")
+attr(weather_long, "spatial")
 # or you can use: spatial(climate_long)
+```
+
+```
+# A tibble: 47 × 7
+  id           long   lat  elev name   wmo_id
+  &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;   &lt;dbl&gt;
+1 ASN00047016  141. -34.0    43 lake …  94692
+2 ASN00047019  142. -32.4    61 menin…  94694
+3 ASN00048015  147. -30.0   115 brewa…  95512
+4 ASN00048027  146. -31.5   260 cobar…  94711
+5 ASN00048031  149. -29.5   145 colla…  95520
+# … with 42 more rows, and 1 more variable:
+#   geometry &lt;POINT [°]&gt;
 ```
 
 ]
 
 
----
-# Example 1: creating interactive graphics
-
-
-
-???
-
-* With the two forms and the verbs I just introduced, I will now show you how to use cubble to link a map view with a temporal display
-
-* Here the example is to explore seasonality of temperature at various locations in Australia
-
-* I will first illustrate how the linking in interactive graphic works with cubble before showing you the graphic.
-
-* A map can be crated the nested cubble where each point corresponds to a row and color by a particular variable of interest
-
-* With the long cubble, you can make a temporal display. 
-
-* In this illustration, the rows that share the same id in the long form is a line and the same color as used as the map
-
-* Once a point is selected on the map, it will activate the corresponding row in the nested cubble
-
----
-
-# Example 1: creating interactive graphics
-
-
-
-???
-
-* The nested cubble will then be linked to the long cubble and the rows in the long cubble with the same id will be activated.
-
-
----
-# Example 1: creating interactive graphics
-
-
-
-???
-
-* These activated rows in the long form will then highlight selected time series in the plot
-
-* This linking also works in the other direction, where you can make a selection on the temporal display and it wil highlight the corresponding location on the map
-
----
-class: inverse, middle
-
-
-
-
-???
-
-* Here I record a video to show how select and highlight looks like in the plot. 
-
-* The locations are colored by monthly variation of temperature difference
-
-* This is a measure of how the temperature difference, maximum - minimum, varies across each month. For example, if you have a location with almost constant difference throughout the year, it will have a small value.
-
-* Rather than showing a line of in the temporal display, here we use a ribbon, where the upper bound is the maximum temperature and ...
-
-* Here I first select a point on the right with the lowest temperature in August and you can see it corresponds to the thredbo and it has a fairly constant temperature difference throughout the year, although fiarly low
-
-* Another point I'm interesting to explore is Mount Elizabeth since it has a large variance in temperature difference and I'm interested to know how the maximum and minimum temperature look like in each month. 
-
-* We can see here the large variance comes from its wide gap in the winter season from June to August
 ---
 
 # Transformation to glyphmap
@@ -407,9 +443,24 @@ class: inverse, middle
 
 
 ```r
-cb_migrated &lt;- cb_long %&gt;% 
-  migrate(long, lat)
+cb_migrated &lt;- weather_long %&gt;% 
+  unfold(long, lat)
 cb_migrated
+```
+
+```
+# cubble:  date, id [47]: long form
+# bbox:    [141.26, -36.92, 153.37, -28.97]
+# spatial: long [dbl], lat [dbl], elev [dbl], name [chr],
+#   wmo_id [dbl], geometry [POINT [°]]
+  id          date        tmax  long   lat
+  &lt;chr&gt;       &lt;date&gt;     &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+1 ASN00047016 1966-11-01  12.8  141. -34.0
+2 ASN00047016 1966-11-02  NA    141. -34.0
+3 ASN00047016 1966-11-03  NA    141. -34.0
+4 ASN00047016 1966-11-04  NA    141. -34.0
+5 ASN00047016 1966-11-05  NA    141. -34.0
+# … with 1,085,039 more rows
 ```
 ]
 
@@ -417,9 +468,6 @@ cb_migrated
 ---
 
 # Example 2: Australian temperature revisit
-
-
-
 
 ???
 
@@ -451,9 +499,6 @@ cb_migrated
 ]
 
 
-.pull-right[
-
-]
 
 ???
 
@@ -469,6 +514,9 @@ cb_migrated
 ---
 
 # Working with hierarchical data (1/2)
+
+
+
 
 
 
@@ -488,78 +536,9 @@ cb_migrated
 
 # Working with hierarchical data (2/2)
 
-
-
 ???
 
-* To get access to the long form, you can still use the `stretch()` verb
----
-background-image: url("figures/diagrams/diagrams.014.png")
-background-position: bottom right
-background-size: 280px, 280px
-
-# Example 3: Australian rainfall
-
-
-
-
-```r
-station_nested
-```
-
-???
-
-* This is how our station_nested data look like
-
-* We have similar spatial variables with a new cluster column
-
-* The precipitation has already been summarised into weekly mean in the ts column and it has 53 rows and 2 columns, wk and prcp
-
----
-background-image: url("figures/diagrams/diagrams.014.png")
-background-position: top right
-background-size: 280px, 280px
-
-.pull-left-larger[
-
-
-
-
-]
-
-.pull-right[
-
-
-]
-
-???
-
-- With station_nested, you can use the `switch_key()` to change it to the cluster level. 
-
-- `get_centroid()` in cubble will find the centroid of each cluster
-
-- Then this two datasets can be used to view the cluster membership of each locations on the map
-
----
-background-image: url("figures/diagrams/diagrams.014.png")
-background-position: top right
-background-size: 280px, 280px
-
-.pull-left-larger[
-
-
-
-
-
-
-]
-
-.pull-right[
-
-
-]
-
-
+* To get access to the long form, you can still use the `face_temporal()` verb
 
 ---
 class: inverse, middle
@@ -601,7 +580,7 @@ Slides created via the R package [.inverse-code[xaringan]](https://github.com/yi
 
 H. Sherry Zhang [.inverse-code[<svg aria-hidden="true" role="img" viewBox="0 0 496 512" style="height:1em;width:0.97em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:currentColor;overflow:visible;position:relative;"><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>]](https://github.com/huizezhang-sherry)
 
-Supervisors: Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langrené
+Collaborators: Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langrené
 
 
 
