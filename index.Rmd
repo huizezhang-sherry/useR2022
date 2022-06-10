@@ -141,6 +141,11 @@ out2 %>% st_filter(nsw, .predicate = st_within)
 Error in UseMethod("st_filter") :
    no applicable method for 'st_filter' applied to an object of class "c('tbl_ts', 'tbl_df', 'tbl', 'data.frame')"
 
+---
+
+# Multivariate spatio-temporal data
+
+
 When you finally have both `sf` and `tsibble` in your class, the `sf` class is gone when apply a method from `tsibble`: 
 
 ```{r eval = FALSE, echo = TRUE}
@@ -194,10 +199,20 @@ out3 %>% tsibble::fill_gaps()
 
 ---
 
+# Spatio-temporal cubes
+
+```{r}
+knitr::include_graphics("figures/spatio-temporal-cube.png")
+```
+
+
+
+---
+
 # Cubble basics
 
-```{r out.height=575, eval = FALSE}
-knitr::include_graphics("figures/diagrams/diagrams.003.png")
+```{r out.height=575}
+knitr::include_graphics("figures/long-nested-form.png")
 ```
 
 
@@ -218,8 +233,8 @@ knitr::include_graphics("figures/diagrams/diagrams.003.png")
 ---
 # Switching focus between time and space
 
-```{r out.height=575, eval = FALSE}
-knitr::include_graphics("figures/diagrams/diagrams.004.png")
+```{r out.height=575}
+knitr::include_graphics("figures/cubble-operations.png")
 ```
 
 ???
@@ -229,15 +244,6 @@ knitr::include_graphics("figures/diagrams/diagrams.004.png")
 * The verb `stretch()` switches the nested cubble into the long form and
 
 * This change the focus from the spatial to temporal aspect and the resulting long form can be used to summarise the temporal aspect of the data.
-
----
-# Switching focus between time and space
-
-```{r out.height=575, eval = FALSE}
-knitr::include_graphics("figures/diagrams/diagrams.013.png")
-```
-
-???
 
 * The inverse of `stretch()` is `tamp()`, which switches the long cubble into a nested one
 
@@ -253,6 +259,8 @@ weather <- as_cubble(
   key = id, 
   index = date, 
   coords = c(long, lat))
+
+weather
 ```
 
 
@@ -363,7 +371,7 @@ attr(weather_long, "spatial")
 <!-- What if you want to work with  both spatial or temporal variables? -->
 
 .pull-left[
-```{r out.height = 400, out.width = 500, eval = FALSE}
+```{r out.height = 400, out.width = 500}
 knitr::include_graphics("figures/migrate.png")
 ```
 
@@ -400,7 +408,13 @@ cb_migrated
 
 ---
 
-# Example 2: Australian temperature revisit
+# Example: Australian temperature
+
+```{r}
+knitr::include_graphics(here::here("figures/temperature-workflow.png"))
+```
+
+
 
 ???
 
@@ -425,7 +439,7 @@ cb_migrated
 
 .pull-left-larger[
 
-```{r glyph, eval = FALSE, include = FALSE}
+```{r glyph, eval = FALSE}
 tmax <- DATA %>% 
   filter(NSW_STATIONS) %>% 
   face_temporal() %>% 
@@ -445,11 +459,11 @@ tmax %>%
   geom_glyph()
 ```
 
-```{r echo = FALSE, eval = FALSE}
+```{r echo = FALSE}
 flair::decorate_chunk("glyph", eval = FALSE) %>%
-  flair::flair("stretch", background = "#FFEECF") %>% 
-  flair::flair("tamp", background = "#FFEECF") %>% 
-  flair::flair("migrate", background = "#FFEECF") %>% 
+  flair::flair("face_spatial", background = "#FFEECF") %>% 
+  flair::flair("face_temporal", background = "#FFEECF") %>% 
+  flair::flair("unfold", background = "#FFEECF") %>% 
   flair::flair("geom_glyph_box", background = "#FFEECF") %>% 
   flair::flair("geom_glyph", background = "#FFEECF") %>% 
   flair::knit_print.with_flair()
@@ -457,7 +471,13 @@ flair::decorate_chunk("glyph", eval = FALSE) %>%
 
 ]
 
+.pull-right[
+```{r}
+knitr::include_graphics(here::here("figures/glyphmap.png"))
+```
 
+
+]
 
 ???
 
@@ -470,37 +490,12 @@ flair::decorate_chunk("glyph", eval = FALSE) %>%
 * One information I read from this plot is in the past, the average maximum temperature from December to February are almost the same, while these days, January stands out to be hotter for the inland stations
 
 
----
-
-# Working with hierarchical data (1/2)
 
 ```{r}
 map <- ozmaps::abs_ste %>% rmapshaper::ms_simplify()
 nsw <- map %>% filter(NAME == "New South Wales")
 ```
 
-
-
-
-???
-
-* MST data can have a grouping structure on the space
-
-* Sometimes, rather than exploring the pattern of each individual location, we may want to explore multiple locations together as a group.
-
-* For our climate data, 638 glyph maps would be too much to look at and we can divide them into clusters and view the glyph map of each cluster.
-
-* Here the station nested has a new column called cluster. This is the grouping variable and in the later example we will be using a kmeans cluster to allocate stations into 20 groups
-
-* The cubble function `switch_key()` will reorganise the cubble into the cluster level. Now rather than each station forms a row, each cluster forms a row and you can add other cluster level variables in the column, for example latitude and longitude of cluster centroid. All the station level spatial variables are now nested in the .val column
-
----
-
-# Working with hierarchical data (2/2)
-
-???
-
-* To get access to the long form, you can still use the `face_temporal()` verb
 
 ---
 class: inverse, middle

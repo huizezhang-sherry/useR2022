@@ -96,7 +96,8 @@ ts
 ```
 
 ```
-# A tibble: 1,111,407 × 3
+# A tsibble: 1,085,044 x 3 [1D]
+# Key:       id [47]
   id          date        tmax
   &lt;chr&gt;       &lt;date&gt;     &lt;dbl&gt;
 1 ASN00047016 1966-11-01  12.8
@@ -104,7 +105,7 @@ ts
 3 ASN00047016 1966-11-03  NA  
 4 ASN00047016 1966-11-04  NA  
 5 ASN00047016 1966-11-05  NA  
-# … with 1,111,402 more rows
+# … with 1,085,039 more rows
 ```
 
 
@@ -141,6 +142,11 @@ out2 %&gt;% st_filter(nsw, .predicate = st_within)
 
 Error in UseMethod("st_filter") :
    no applicable method for 'st_filter' applied to an object of class "c('tbl_ts', 'tbl_df', 'tbl', 'data.frame')"
+
+---
+
+# Multivariate spatio-temporal data
+
 
 When you finally have both `sf` and `tsibble` in your class, the `sf` class is gone when apply a method from `tsibble`: 
 
@@ -196,9 +202,17 @@ out3 %&gt;% tsibble::fill_gaps()
 
 ---
 
+# Spatio-temporal cubes
+
+&lt;img src="figures/spatio-temporal-cube.png" width="2532" style="display: block; margin: auto;" /&gt;
+
+
+
+---
+
 # Cubble basics
 
-
+&lt;img src="figures/long-nested-form.png" width="2560" height="575" style="display: block; margin: auto;" /&gt;
 
 
 ???
@@ -218,7 +232,7 @@ out3 %&gt;% tsibble::fill_gaps()
 ---
 # Switching focus between time and space
 
-
+&lt;img src="figures/cubble-operations.png" width="2560" height="575" style="display: block; margin: auto;" /&gt;
 
 ???
 
@@ -227,13 +241,6 @@ out3 %&gt;% tsibble::fill_gaps()
 * The verb `stretch()` switches the nested cubble into the long form and
 
 * This change the focus from the spatial to temporal aspect and the resulting long form can be used to summarise the temporal aspect of the data.
-
----
-# Switching focus between time and space
-
-
-
-???
 
 * The inverse of `stretch()` is `tamp()`, which switches the long cubble into a nested one
 
@@ -250,6 +257,28 @@ weather &lt;- as_cubble(
   key = id, 
   index = date, 
   coords = c(long, lat))
+
+weather
+```
+
+```
+Simple feature collection with 47 features and 7 fields
+Geometry type: POINT
+Dimension:     XY
+Bounding box:  xmin: 141.2652 ymin: -36.9113 xmax: 153.3633 ymax: -28.9786
+Geodetic CRS:  GDA94
+# cubble:   id [47]: nested form
+# bbox:     [141.26, -36.92, 153.37, -28.97]
+# temporal: date [date], tmax [dbl]
+  id           long   lat  elev name   wmo_id
+  &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;   &lt;dbl&gt;
+1 ASN00047016  141. -34.0    43 lake …  94692
+2 ASN00047019  142. -32.4    61 menin…  94694
+3 ASN00048015  147. -30.0   115 brewa…  95512
+4 ASN00048027  146. -31.5   260 cobar…  94711
+5 ASN00048031  149. -29.5   145 colla…  95520
+# … with 42 more rows, and 2 more variables:
+#   geometry &lt;POINT [°]&gt;, ts &lt;list&gt;
 ```
 
 
@@ -418,7 +447,7 @@ attr(weather_long, "spatial")
 &lt;!-- What if you want to work with  both spatial or temporal variables? --&gt;
 
 .pull-left[
-
+&lt;img src="figures/migrate.png" width="500" height="400" style="display: block; margin: auto;" /&gt;
 
 ]
 
@@ -467,7 +496,11 @@ cb_migrated
 
 ---
 
-# Example 2: Australian temperature revisit
+# Example: Australian temperature
+
+&lt;img src="figures/temperature-workflow.png" width="2560" style="display: block; margin: auto;" /&gt;
+
+
 
 ???
 
@@ -495,10 +528,15 @@ cb_migrated
 
 
 
+&lt;code class ='r hljs remark-code'&gt;tmax &lt;- DATA %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;filter(NSW_STATIONS) %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_temporal&lt;/span&gt;() %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;filter(DATE_IN_TWO_GROUPS) %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;summarise() %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_spatial&lt;/span&gt;() %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;filter(NO_MISSING_VALUE) %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_temporal&lt;/span&gt;() %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;unfold&lt;/span&gt;(long, lat)&lt;br&gt;&lt;br&gt;tmax %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;ggplot(aes(x_minor = lubridate::month(date), &lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;y_minor = tmax, &lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;x_major = long, &lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;y_major = lat)) + &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;&lt;span style='background-color:#FFEECF'&gt;geom_glyph&lt;/span&gt;_box&lt;/span&gt;() + &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;geom_glyph&lt;/span&gt;()&lt;/code&gt;
 
 ]
 
+.pull-right[
+&lt;img src="figures/glyphmap.png" width="4000" style="display: block; margin: auto;" /&gt;
 
+
+]
 
 ???
 
@@ -511,34 +549,9 @@ cb_migrated
 * One information I read from this plot is in the past, the average maximum temperature from December to February are almost the same, while these days, January stands out to be hotter for the inland stations
 
 
----
-
-# Working with hierarchical data (1/2)
 
 
 
-
-
-
-???
-
-* MST data can have a grouping structure on the space
-
-* Sometimes, rather than exploring the pattern of each individual location, we may want to explore multiple locations together as a group.
-
-* For our climate data, 638 glyph maps would be too much to look at and we can divide them into clusters and view the glyph map of each cluster.
-
-* Here the station nested has a new column called cluster. This is the grouping variable and in the later example we will be using a kmeans cluster to allocate stations into 20 groups
-
-* The cubble function `switch_key()` will reorganise the cubble into the cluster level. Now rather than each station forms a row, each cluster forms a row and you can add other cluster level variables in the column, for example latitude and longitude of cluster centroid. All the station level spatial variables are now nested in the .val column
-
----
-
-# Working with hierarchical data (2/2)
-
-???
-
-* To get access to the long form, you can still use the `face_temporal()` verb
 
 ---
 class: inverse, middle
