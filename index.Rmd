@@ -30,8 +30,8 @@ knitr::opts_chunk$set(echo = FALSE,
                       cache = TRUE, 
                       comment = NA,
                       fig.align='center')
-
-options(pillar.print_max = 5, pillar.print_min = 5, width = 45)
+wide_width <-  100
+options(pillar.print_max = 5, pillar.print_min = 5, width = wide_width)
 library(tidyverse)
 library(cubble)
 library(flair)
@@ -61,7 +61,7 @@ style_duo_accent(
 ```
 
 
-# Multivariate spatio-temporal data
+# Spatial data
 
 ```{r}
 raw <- weatherdata::historical_tmax %>% 
@@ -79,6 +79,7 @@ stations_sf <- raw_stations %>%
 stations_sf 
 ```
 
+]
 
 ???
 
@@ -90,20 +91,15 @@ stations_sf
 
 * Here is the link to this slides, in case you would like to go back and forth while I'm talking
 
-* MST data are commonly collected in different areas  
+* Spatial data is common and here is a [...]
 
-* some examples of these include 
+* The sf class uses a list column to store the feature geometries, including points, lines, polygons, multipolygons
 
-  * climate variables measured by weather stations over time, 
-  
-  * pollutant data monitored by air quality meters, and 
-  
-  * river level data recorded by river gauges over different periods.
-
+* With the sf class, we can do various geometrical operations in the space
 
 ---
 
-# Multivariate spatio-temporal data
+# Temporal data
 
 ```{r}
 ts <- raw %>% face_temporal() %>% tsibble::as_tsibble(key = id, index = date)
@@ -116,57 +112,67 @@ ts
 
 ???
 
-* Conceptually MST data can be thought of as a data cube with three axes: site, time, and variable
+* Temporal data is also common 
 
+* Here we have an object named `ts`, which contains ...
 
+* It is stored in a `tsibble` class with `id` as the key to define each series and `date` as the index to define the time stamp. 
+
+* With the `tsibble` class, you can do many temporal wrangling and build temporal models. 
 
 ---
 
-# Multivariate spatio-temporal data
+# Spatio-temporal data 
 
 When left joining an `sf` object with a `tsibble`, the `tsibble` class gets lost: 
 
-```{r echo = TRUE, echo = TRUE}
+```{r echo = TRUE}
 out <- stations_sf %>% left_join(ts, by = "id")
 class(out)
 ```
 
 When left joining the other way around, you lost the `sf` class:
 
-```{r eval = FALSE, echo = TRUE}
+```{r echo = TRUE}
 out2 <- ts %>% left_join(stations_sf, by = "id")
-out2 %>% st_filter(nsw, .predicate = st_within)
+class(out2)
 ```
 
-Error in UseMethod("st_filter") :
-   no applicable method for 'st_filter' applied to an object of class "c('tbl_ts', 'tbl_df', 'tbl', 'data.frame')"
+???
+
+
+* However, these spatial objects and temporal objects are punching each other's face when combined together for spatio-temporal analysis. 
+* Here if I join ...
+
+* if I join it ...
 
 ---
 
 # Multivariate spatio-temporal data
 
+You can manually coerce the joined object to have both classes:
 
-When you finally have both `sf` and `tsibble` in your class, the `sf` class is gone when apply a method from `tsibble`: 
-
-```{r eval = FALSE, echo = TRUE}
-out3 <- out2 %>% 
-  filter(lubridate::year(date) %in% c(1971:1975, 2016:2020)) %>% 
-  filter(!(lubridate::year(date) == 1971 & lubridate::month(date) == 2)) %>% 
-  st_as_sf()
-out3
+```{r echo = TRUE}
+out3 <- out2 %>% st_as_sf()
 class(out3)
+```
 
-out3 %>% tsibble::fill_gaps()
+but the class lost again after a `tsibble` operation: 
+
+```{r echo = TRUE}
+out4 <- out3 %>% tsibble::fill_gaps()
+class(out4)
 ```
 
 ???
 
-* And to analyse this type of data, we can
+* There is ways to enforce both the `tsibble` and `sf` class in the data object. 
 
-  * fix the time to look at the spatial distribution of variables; 
-  * fix the location to look at the temporal variation, like trend and seasonality; or 
-  * look at relationship among variables across time and space
+* But the class label can still get lost when using operations from one class. 
 
+* Here I use a tsibble function `fill_gaps` and the output no longer has the `sf` class
+
+* Also, taking a step back, a simple join of the spatial and temporal data is not the best way to structure spatio-temporal data since all the feature geometries are repeated multiple times, especially for long daily data.  
 ---
 
 # Motivation 
@@ -181,25 +187,37 @@ out3 %>% tsibble::fill_gaps()
 
 ???
 
-* Now let's change the topic and look at some climate data
+* This motivates a new data representation for spatio-temporal data
 
-* NOAA hosts worldwide climate data
+* To think about spatio-temporal data conceptually, we introduce a multivariate spatio-temporal cube
 
-* To get data from there, you will first need to query the locations and variables of interest. This gives a spatial table on the top
+* Here the cube is defined slightly different from a conventional spatio-temporal cube. 
 
-* Then you will query the temporal information based on the spatial table
+* Rather than stacking spatial snapshots across time, here the cube has three axes: Time, Site, and Variable
 
-* This is an example where MST
+* Here latitude and longitude only takes one dimension as **Site** and make an assumption that an entity has a fixed location. 
 
-* Today I will introduce a new data structure, cubble, that allows you to organise spatio-temporal data in a different way
+* **Variable** is used to represent multivariate information in the spatio-temporal data. 
 
-* so that different pieces of information all live in a single data object and users can easily access variables during the analysis
+* We define the data in this way to avoid introducing hypercubes for multivariate information. 
 
-* I will illustrate the data structure with three examples in this talk
+* With this cube, operations on multivariate spatio-temporal data can be thought of as slicing and dicing on the cube. 
+
+* While the data cube model is conceptually convenient for spatio-temporal data, it is not sufficiently rich for data wrangling. 
+
+* Arrays are efficient for computing on numerical values, wrangling special date time classes can be difficult. 
+
+* Thus for the convenient wrangling, we have designed a new spatio-temporal class, called cubble
+
+<!-- * Today I will introduce a new data structure, cubble, that allows you to organise spatio-temporal data in a different way -->
+
+<!-- * so that different pieces of information all live in a single data object and users can easily access variables during the analysis -->
+
+<!-- * I will illustrate the data structure with three examples in this talk -->
 
 ---
 
-# Spatio-temporal cubes
+# Multivariate spatio-temporal cubes
 
 ```{r}
 knitr::include_graphics("figures/spatio-temporal-cube.png")
@@ -222,11 +240,11 @@ knitr::include_graphics("figures/long-nested-form.png")
 
 * Here I use two colors to represent the spatial and temporal variables
 
-* The nested cubble has each location in a row 
+* The nested cubble has each site in a row 
 
 * It has spatial variables like longitude, latitude, among others and temporal variables all nested in a ts column. 
 
-* In the long cubble, each row is identified by a combination of location and date. 
+* In the long cubble, each row is identified by a combination of site and date. 
   
 * spatial variables are stored separately as the data attributes, which I will later show you through the code
   
@@ -241,11 +259,11 @@ knitr::include_graphics("figures/cubble-operations.png")
 
 * Here is how you can switch between the nested and long form
 
-* The verb `stretch()` switches the nested cubble into the long form and
+* The verb `face_temporal()` switches the nested cubble into the long form and
 
 * This change the focus from the spatial to temporal aspect and the resulting long form can be used to summarise the temporal aspect of the data.
 
-* The inverse of `stretch()` is `tamp()`, which switches the long cubble into a nested one
+* The inverse of `face_temporal()` is `face_spatial()`, which switches the long cubble into a nested one
 
 * This changes the focus back to the spatial aspect and can be used to view the spatial distribution of variables on the map
 
@@ -254,71 +272,59 @@ knitr::include_graphics("figures/cubble-operations.png")
 # Creating a cubble
 
 ```{r echo = TRUE}
-weather <- as_cubble(
-  list(spatial = stations_sf, temporal = ts),
-  key = id, 
-  index = date, 
-  coords = c(long, lat))
+weather <- as_cubble(list(spatial = stations_sf, temporal = ts),
+  key = id, index = date, coords = c(long, lat))
 
 weather
 ```
+
+--
+
+- There are .sec[47] stations in this data, it is in the nested form and is a subclass of `sf` 
+- Temporal variables are `date`, and `tmax`. Spatial variables: `long, lat, elev, name`, and `wmo_id`
+- Each temporal component is a tsibble containing temporal information
 
 
 ???
 
-* Now I'm going to show you how cubble looks like in the code
+* Now I'm going to show you how to create a cubble from the spatial and temporal data we have seen before.
 
-* With the spatial and temporal table I show you early one, there are different ways you can cast them into a cubble
+* Here you specify the spatial and temporal object in a list with name `spatial` and `temporal`. 
 
-* The first one joins the two tables by id into a combined data, and
-
-* The second one uses a rowwise structure to query the temporal variables directly into a list column, you can see the header here it is a rowwise data frame and each element in the `ts` column has 366 rows and four variables
-
-* With either form, you can use `as_cubble` function and supply three arguments, the key, the index, and the coordinates, which are the three important information in MST data
-
-
----
-
-# Cubble summary (1/2)
-
-```{r eval = FALSE, echo = TRUE}
-weather
-```
-
-```{r}
-options(width = 345)
-weather
-```
-
-???
+* Then you can specify the `key` and `index` as what you would do  when creating a `tsibble` and `coords` in the order of longitude and latitude. 
 
 * By default, this create a nested cubble. 
 
 * There is a header summary on cubble objects, here it tells you
 
-
---
-
-- There are .sec[638] stations in this data 
-- Temporal variables are `date, prcp, tmax`, and `tmin`
-- Spatial variables: `lat, long, elev, name`, and `wmo_id`
-- Each temporal component is a tibble, .sec[366] rows for each station
-
 ---
+# Cubble summary (1/2)
 
-# Cubble summary (2/2)
+.pull-left-large[
 
-.pull-left[
-```{r}
-weather_long <- weather %>% face_temporal()
-options(width = 45)
+```{r echo = FALSE}
+options(width = 50)
 ```
+
 
 ```{r echo = TRUE}
 weather_long <- weather %>% face_temporal()
 weather_long
 ```
 
+  - now it is a long form cubble and is a subclass of `tsibble`
+  
+  - the third row now shows the spatial variables
+
+]
+
+.pull-right[
+
+```{r echo = TRUE}
+attr(weather_long, "spatial")
+# or you can use: spatial(climate_long)
+```
+  
 
 ]
 
@@ -329,33 +335,18 @@ weather_long
 ---
 # Cubble summary (2/2)
 
-
-.pull-left[
-```{r}
-weather_long <- weather %>% face_temporal()
-options(width = 45)
+```{r echo = FALSE}
+options(width = wide_width)
 ```
 
 ```{r echo = TRUE}
-weather_long <- weather %>% face_temporal()
-weather_long
+weather_back <- weather_long %>% face_spatial()
+weather_back
+
+identical(weather_back, weather)
 ```
 
 
-* Notice: `# spatial: lat [dbl], long [dbl], elev [dbl], name [chr], wmo_id [dbl]`
-
-
-]
-
---
-
-.pull-right[
-```{r echo = TRUE, results='hold'}
-attr(weather_long, "spatial")
-# or you can use: spatial(climate_long)
-```
-
-]
 
 
 ---
@@ -399,8 +390,7 @@ options(width = 60)
 
 
 ```{r echo = TRUE}
-cb_migrated <- weather_long %>% 
-  unfold(long, lat)
+cb_migrated <- weather_long %>% unfold(long, lat)
 cb_migrated
 ```
 ]

@@ -35,7 +35,7 @@ Collaborators: Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langren�
 
 
 
-# Multivariate spatio-temporal data
+# Spatial data
 
 
 
@@ -51,17 +51,17 @@ Dimension:     XY
 Bounding box:  xmin: 141.2652 ymin: -36.9113 xmax: 153.3633 ymax: -28.9786
 Geodetic CRS:  GDA94
 # A tibble: 47 × 7
-  id           long   lat  elev name   wmo_id
-* &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;   &lt;dbl&gt;
-1 ASN00047016  141. -34.0    43 lake …  94692
-2 ASN00047019  142. -32.4    61 menin…  94694
-3 ASN00048015  147. -30.0   115 brewa…  95512
-4 ASN00048027  146. -31.5   260 cobar…  94711
-5 ASN00048031  149. -29.5   145 colla…  95520
-# … with 42 more rows, and 1 more variable:
-#   geometry &lt;POINT [°]&gt;
+  id           long   lat  elev name                     wmo_id            geometry
+* &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;                     &lt;dbl&gt;         &lt;POINT [°]&gt;
+1 ASN00047016  141. -34.0    43 lake victoria storage     94692 (141.2652 -34.0398)
+2 ASN00047019  142. -32.4    61 menindee post office      94694 (142.4173 -32.3937)
+3 ASN00048015  147. -30.0   115 brewarrina hospital       95512 (146.8651 -29.9614)
+4 ASN00048027  146. -31.5   260 cobar mo                  94711  (145.8294 -31.484)
+5 ASN00048031  149. -29.5   145 collarenebri (albert st)  95520 (148.5818 -29.5407)
+# … with 42 more rows
 ```
 
+]
 
 ???
 
@@ -73,20 +73,15 @@ Geodetic CRS:  GDA94
 
 * Here is the link to this slides, in case you would like to go back and forth while I'm talking
 
-* MST data are commonly collected in different areas  
+* Spatial data is common and here is a [...]
 
-* some examples of these include 
+* The sf class uses a list column to store the feature geometries, including points, lines, polygons, multipolygons
 
-  * climate variables measured by weather stations over time, 
-  
-  * pollutant data monitored by air quality meters, and 
-  
-  * river level data recorded by river gauges over different periods.
-
+* With the sf class, we can do various geometrical operations in the space
 
 ---
 
-# Multivariate spatio-temporal data
+# Temporal data
 
 
 
@@ -111,13 +106,17 @@ ts
 
 ???
 
-* Conceptually MST data can be thought of as a data cube with three axes: site, time, and variable
+* Temporal data is also common 
 
+* Here we have an object named `ts`, which contains ...
 
+* It is stored in a `tsibble` class with `id` as the key to define each series and `date` as the index to define the time stamp. 
+
+* With the `tsibble` class, you can do many temporal wrangling and build temporal models. 
 
 ---
 
-# Multivariate spatio-temporal data
+# Spatio-temporal data 
 
 When left joining an `sf` object with a `tsibble`, the `tsibble` class gets lost: 
 
@@ -128,8 +127,7 @@ class(out)
 ```
 
 ```
-[1] "sf"         "tbl_df"     "tbl"       
-[4] "data.frame"
+[1] "sf"         "tbl_df"     "tbl"        "data.frame"
 ```
 
 When left joining the other way around, you lost the `sf` class:
@@ -137,39 +135,58 @@ When left joining the other way around, you lost the `sf` class:
 
 ```r
 out2 &lt;- ts %&gt;% left_join(stations_sf, by = "id")
-out2 %&gt;% st_filter(nsw, .predicate = st_within)
+class(out2)
 ```
 
-Error in UseMethod("st_filter") :
-   no applicable method for 'st_filter' applied to an object of class "c('tbl_ts', 'tbl_df', 'tbl', 'data.frame')"
+```
+[1] "tbl_ts"     "tbl_df"     "tbl"        "data.frame"
+```
+
+???
+
+
+* However, these spatial objects and temporal objects are punching each other's face when combined together for spatio-temporal analysis. 
+* Here if I join ...
+
+* if I join it ...
 
 ---
 
 # Multivariate spatio-temporal data
 
-
-When you finally have both `sf` and `tsibble` in your class, the `sf` class is gone when apply a method from `tsibble`: 
+You can manually coerce the joined object to have both classes:
 
 
 ```r
-out3 &lt;- out2 %&gt;% 
-  filter(lubridate::year(date) %in% c(1971:1975, 2016:2020)) %&gt;% 
-  filter(!(lubridate::year(date) == 1971 &amp; lubridate::month(date) == 2)) %&gt;% 
-  st_as_sf()
-out3
+out3 &lt;- out2 %&gt;% st_as_sf()
 class(out3)
+```
 
-out3 %&gt;% tsibble::fill_gaps()
+```
+[1] "sf"         "tbl_ts"     "tbl_df"     "tbl"        "data.frame"
+```
+
+but the class lost again after a `tsibble` operation: 
+
+
+```r
+out4 &lt;- out3 %&gt;% tsibble::fill_gaps()
+class(out4)
+```
+
+```
+[1] "tbl_ts"     "tbl_df"     "tbl"        "data.frame"
 ```
 
 ???
 
-* And to analyse this type of data, we can
+* There is ways to enforce both the `tsibble` and `sf` class in the data object. 
 
-  * fix the time to look at the spatial distribution of variables; 
-  * fix the location to look at the temporal variation, like trend and seasonality; or 
-  * look at relationship among variables across time and space
+* But the class label can still get lost when using operations from one class. 
 
+* Here I use a tsibble function `fill_gaps` and the output no longer has the `sf` class
+
+* Also, taking a step back, a simple join of the spatial and temporal data is not the best way to structure spatio-temporal data since all the feature geometries are repeated multiple times, especially for long daily data.  
 ---
 
 # Motivation 
@@ -184,25 +201,37 @@ out3 %&gt;% tsibble::fill_gaps()
 
 ???
 
-* Now let's change the topic and look at some climate data
+* This motivates a new data representation for spatio-temporal data
 
-* NOAA hosts worldwide climate data
+* To think about spatio-temporal data conceptually, we introduce a multivariate spatio-temporal cube
 
-* To get data from there, you will first need to query the locations and variables of interest. This gives a spatial table on the top
+* Here the cube is defined slightly different from a conventional spatio-temporal cube. 
 
-* Then you will query the temporal information based on the spatial table
+* Rather than stacking spatial snapshots across time, here the cube has three axes: Time, Site, and Variable
 
-* This is an example where MST
+* Here latitude and longitude only takes one dimension as **Site** and make an assumption that an entity has a fixed location. 
 
-* Today I will introduce a new data structure, cubble, that allows you to organise spatio-temporal data in a different way
+* **Variable** is used to represent multivariate information in the spatio-temporal data. 
 
-* so that different pieces of information all live in a single data object and users can easily access variables during the analysis
+* We define the data in this way to avoid introducing hypercubes for multivariate information. 
 
-* I will illustrate the data structure with three examples in this talk
+* With this cube, operations on multivariate spatio-temporal data can be thought of as slicing and dicing on the cube. 
+
+* While the data cube model is conceptually convenient for spatio-temporal data, it is not sufficiently rich for data wrangling. 
+
+* Arrays are efficient for computing on numerical values, wrangling special date time classes can be difficult. 
+
+* Thus for the convenient wrangling, we have designed a new spatio-temporal class, called cubble
+
+&lt;!-- * Today I will introduce a new data structure, cubble, that allows you to organise spatio-temporal data in a different way --&gt;
+
+&lt;!-- * so that different pieces of information all live in a single data object and users can easily access variables during the analysis --&gt;
+
+&lt;!-- * I will illustrate the data structure with three examples in this talk --&gt;
 
 ---
 
-# Spatio-temporal cubes
+# Multivariate spatio-temporal cubes
 
 &lt;img src="figures/spatio-temporal-cube.png" width="2532" style="display: block; margin: auto;" /&gt;
 
@@ -221,11 +250,11 @@ out3 %&gt;% tsibble::fill_gaps()
 
 * Here I use two colors to represent the spatial and temporal variables
 
-* The nested cubble has each location in a row 
+* The nested cubble has each site in a row 
 
 * It has spatial variables like longitude, latitude, among others and temporal variables all nested in a ts column. 
 
-* In the long cubble, each row is identified by a combination of location and date. 
+* In the long cubble, each row is identified by a combination of site and date. 
   
 * spatial variables are stored separately as the data attributes, which I will later show you through the code
   
@@ -238,11 +267,11 @@ out3 %&gt;% tsibble::fill_gaps()
 
 * Here is how you can switch between the nested and long form
 
-* The verb `stretch()` switches the nested cubble into the long form and
+* The verb `face_temporal()` switches the nested cubble into the long form and
 
 * This change the focus from the spatial to temporal aspect and the resulting long form can be used to summarise the temporal aspect of the data.
 
-* The inverse of `stretch()` is `tamp()`, which switches the long cubble into a nested one
+* The inverse of `face_temporal()` is `face_spatial()`, which switches the long cubble into a nested one
 
 * This changes the focus back to the spatial aspect and can be used to view the spatial distribution of variables on the map
 
@@ -252,97 +281,51 @@ out3 %&gt;% tsibble::fill_gaps()
 
 
 ```r
-weather &lt;- as_cubble(
-  list(spatial = stations_sf, temporal = ts),
-  key = id, 
-  index = date, 
-  coords = c(long, lat))
+weather &lt;- as_cubble(list(spatial = stations_sf, temporal = ts),
+  key = id, index = date, coords = c(long, lat))
 
 weather
 ```
 
 ```
-Simple feature collection with 47 features and 7 fields
-Geometry type: POINT
-Dimension:     XY
-Bounding box:  xmin: 141.2652 ymin: -36.9113 xmax: 153.3633 ymax: -28.9786
-Geodetic CRS:  GDA94
-# cubble:   id [47]: nested form
+# cubble:   id [47]: nested form [sf]
 # bbox:     [141.26, -36.92, 153.37, -28.97]
 # temporal: date [date], tmax [dbl]
-  id           long   lat  elev name   wmo_id
-  &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;   &lt;dbl&gt;
-1 ASN00047016  141. -34.0    43 lake …  94692
-2 ASN00047019  142. -32.4    61 menin…  94694
-3 ASN00048015  147. -30.0   115 brewa…  95512
-4 ASN00048027  146. -31.5   260 cobar…  94711
-5 ASN00048031  149. -29.5   145 colla…  95520
-# … with 42 more rows, and 2 more variables:
-#   geometry &lt;POINT [°]&gt;, ts &lt;list&gt;
-```
-
-
-???
-
-* Now I'm going to show you how cubble looks like in the code
-
-* With the spatial and temporal table I show you early one, there are different ways you can cast them into a cubble
-
-* The first one joins the two tables by id into a combined data, and
-
-* The second one uses a rowwise structure to query the temporal variables directly into a list column, you can see the header here it is a rowwise data frame and each element in the `ts` column has 366 rows and four variables
-
-* With either form, you can use `as_cubble` function and supply three arguments, the key, the index, and the coordinates, which are the three important information in MST data
-
-
----
-
-# Cubble summary (1/2)
-
-
-```r
-weather
-```
-
-
-```
-Simple feature collection with 47 features and 7 fields
-Geometry type: POINT
-Dimension:     XY
-Bounding box:  xmin: 141.2652 ymin: -36.9113 xmax: 153.3633 ymax: -28.9786
-Geodetic CRS:  GDA94
-# cubble:   id [47]: nested form
-# bbox:     [141.26, -36.92, 153.37, -28.97]
-# temporal: date [date], tmax [dbl]
-  id           long   lat  elev name                     wmo_id            geometry ts                   
-  &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;                     &lt;dbl&gt;         &lt;POINT [°]&gt; &lt;list&gt;               
-1 ASN00047016  141. -34.0    43 lake victoria storage     94692 (141.2652 -34.0398) &lt;tibble [20,150 × 2]&gt;
-2 ASN00047019  142. -32.4    61 menindee post office      94694 (142.4173 -32.3937) &lt;tibble [23,011 × 2]&gt;
-3 ASN00048015  147. -30.0   115 brewarrina hospital       95512 (146.8651 -29.9614) &lt;tibble [20,819 × 2]&gt;
-4 ASN00048027  146. -31.5   260 cobar mo                  94711  (145.8294 -31.484) &lt;tibble [21,795 × 2]&gt;
-5 ASN00048031  149. -29.5   145 collarenebri (albert st)  95520 (148.5818 -29.5407) &lt;tibble [20,819 × 2]&gt;
+  id           long   lat  elev name                     wmo_id            geometry ts      
+  &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;                     &lt;dbl&gt;         &lt;POINT [°]&gt; &lt;list&gt;  
+1 ASN00047016  141. -34.0    43 lake victoria storage     94692 (141.2652 -34.0398) &lt;tbl_ts&gt;
+2 ASN00047019  142. -32.4    61 menindee post office      94694 (142.4173 -32.3937) &lt;tbl_ts&gt;
+3 ASN00048015  147. -30.0   115 brewarrina hospital       95512 (146.8651 -29.9614) &lt;tbl_ts&gt;
+4 ASN00048027  146. -31.5   260 cobar mo                  94711  (145.8294 -31.484) &lt;tbl_ts&gt;
+5 ASN00048031  149. -29.5   145 collarenebri (albert st)  95520 (148.5818 -29.5407) &lt;tbl_ts&gt;
 # … with 42 more rows
 ```
 
+--
+
+- There are .sec[47] stations in this data, it is in the nested form and is a subclass of `sf` 
+- Temporal variables are `date`, and `tmax`. Spatial variables: `long, lat, elev, name`, and `wmo_id`
+- Each temporal component is a tsibble containing temporal information
+
+
 ???
+
+* Now I'm going to show you how to create a cubble from the spatial and temporal data we have seen before.
+
+* Here you specify the spatial and temporal object in a list with name `spatial` and `temporal`. 
+
+* Then you can specify the `key` and `index` as what you would do  when creating a `tsibble` and `coords` in the order of longitude and latitude. 
 
 * By default, this create a nested cubble. 
 
 * There is a header summary on cubble objects, here it tells you
 
-
---
-
-- There are .sec[638] stations in this data 
-- Temporal variables are `date, prcp, tmax`, and `tmin`
-- Spatial variables: `lat, long, elev, name`, and `wmo_id`
-- Each temporal component is a tibble, .sec[366] rows for each station
-
 ---
+# Cubble summary (1/2)
 
-# Cubble summary (2/2)
+.pull-left-large[
 
-.pull-left[
+
 
 
 
@@ -352,11 +335,11 @@ weather_long
 ```
 
 ```
-# cubble:  date, id [47]: long form
+# cubble:  date, id [47]: long form [tsibble]
 # bbox:    [141.26, -36.92, 153.37, -28.97]
-# spatial: long [dbl], lat [dbl], elev
-#   [dbl], name [chr], wmo_id [dbl],
-#   geometry [POINT [°]]
+# spatial: long [dbl], lat [dbl], elev [dbl],
+#   name [chr], wmo_id [dbl], geometry [POINT
+#   [°]]
   id          date        tmax
   &lt;chr&gt;       &lt;date&gt;     &lt;dbl&gt;
 1 ASN00047016 1966-11-01  12.8
@@ -367,6 +350,42 @@ weather_long
 # … with 1,085,039 more rows
 ```
 
+  - now it is a long form cubble and is a subclass of `tsibble`
+  
+  - the third row now shows the spatial variables
+
+]
+
+.pull-right[
+
+
+```r
+attr(weather_long, "spatial")
+```
+
+```
+Simple feature collection with 47 features and 6 fields
+Geometry type: POINT
+Dimension:     XY
+Bounding box:  xmin: 141.2652 ymin: -36.9113 xmax: 153.3633 ymax: -28.9786
+Geodetic CRS:  GDA94
+# A tibble: 47 × 7
+# Rowwise:  id
+  id           long   lat  elev name        wmo_id
+  &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;        &lt;dbl&gt;
+1 ASN00047016  141. -34.0    43 lake victo…  94692
+2 ASN00047019  142. -32.4    61 menindee p…  94694
+3 ASN00048015  147. -30.0   115 brewarrina…  95512
+4 ASN00048027  146. -31.5   260 cobar mo     94711
+5 ASN00048031  149. -29.5   145 collareneb…  95520
+# … with 42 more rows, and 1 more variable:
+#   geometry &lt;POINT [°]&gt;
+```
+
+```r
+# or you can use: spatial(climate_long)
+```
+  
 
 ]
 
@@ -378,60 +397,36 @@ weather_long
 # Cubble summary (2/2)
 
 
-.pull-left[
-
 
 
 ```r
-weather_long &lt;- weather %&gt;% face_temporal()
-weather_long
+weather_back &lt;- weather_long %&gt;% face_spatial()
+weather_back
 ```
 
 ```
-# cubble:  date, id [47]: long form
-# bbox:    [141.26, -36.92, 153.37, -28.97]
-# spatial: long [dbl], lat [dbl], elev
-#   [dbl], name [chr], wmo_id [dbl],
-#   geometry [POINT [°]]
-  id          date        tmax
-  &lt;chr&gt;       &lt;date&gt;     &lt;dbl&gt;
-1 ASN00047016 1966-11-01  12.8
-2 ASN00047016 1966-11-02  NA  
-3 ASN00047016 1966-11-03  NA  
-4 ASN00047016 1966-11-04  NA  
-5 ASN00047016 1966-11-05  NA  
-# … with 1,085,039 more rows
+# cubble:   id [47]: nested form [sf]
+# bbox:     [141.26, -36.92, 153.37, -28.97]
+# temporal: date [date], tmax [dbl]
+  id           long   lat  elev name                     wmo_id            geometry ts      
+  &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;                     &lt;dbl&gt;         &lt;POINT [°]&gt; &lt;list&gt;  
+1 ASN00047016  141. -34.0    43 lake victoria storage     94692 (141.2652 -34.0398) &lt;tbl_ts&gt;
+2 ASN00047019  142. -32.4    61 menindee post office      94694 (142.4173 -32.3937) &lt;tbl_ts&gt;
+3 ASN00048015  147. -30.0   115 brewarrina hospital       95512 (146.8651 -29.9614) &lt;tbl_ts&gt;
+4 ASN00048027  146. -31.5   260 cobar mo                  94711  (145.8294 -31.484) &lt;tbl_ts&gt;
+5 ASN00048031  149. -29.5   145 collarenebri (albert st)  95520 (148.5818 -29.5407) &lt;tbl_ts&gt;
+# … with 42 more rows
 ```
-
-
-* Notice: `# spatial: lat [dbl], long [dbl], elev [dbl], name [chr], wmo_id [dbl]`
-
-
-]
-
---
-
-.pull-right[
 
 ```r
-attr(weather_long, "spatial")
-# or you can use: spatial(climate_long)
+identical(weather_back, weather)
 ```
 
 ```
-# A tibble: 47 × 7
-  id           long   lat  elev name   wmo_id
-  &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;   &lt;dbl&gt;
-1 ASN00047016  141. -34.0    43 lake …  94692
-2 ASN00047019  142. -32.4    61 menin…  94694
-3 ASN00048015  147. -30.0   115 brewa…  95512
-4 ASN00048027  146. -31.5   260 cobar…  94711
-5 ASN00048031  149. -29.5   145 colla…  95520
-# … with 42 more rows, and 1 more variable:
-#   geometry &lt;POINT [°]&gt;
+[1] TRUE
 ```
 
-]
+
 
 
 ---
@@ -472,13 +467,12 @@ attr(weather_long, "spatial")
 
 
 ```r
-cb_migrated &lt;- weather_long %&gt;% 
-  unfold(long, lat)
+cb_migrated &lt;- weather_long %&gt;% unfold(long, lat)
 cb_migrated
 ```
 
 ```
-# cubble:  date, id [47]: long form
+# cubble:  date, id [47]: long form [tsibble]
 # bbox:    [141.26, -36.92, 153.37, -28.97]
 # spatial: long [dbl], lat [dbl], elev [dbl], name [chr],
 #   wmo_id [dbl], geometry [POINT [°]]
@@ -489,7 +483,8 @@ cb_migrated
 3 ASN00047016 1966-11-03  NA    141. -34.0
 4 ASN00047016 1966-11-04  NA    141. -34.0
 5 ASN00047016 1966-11-05  NA    141. -34.0
-# … with 1,085,039 more rows
+# … with 1,085,039 more rows, and 1 more variable:
+#   geometry &lt;POINT [°]&gt;
 ```
 ]
 
