@@ -367,6 +367,10 @@ identical(weather_back, weather)
 ---
 # Glyphmap basics
 
+```{r}
+knitr::include_graphics(here::here("figures/glyph-steps.png"))
+```
+
 
 ???
 
