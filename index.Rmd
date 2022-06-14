@@ -31,13 +31,20 @@ knitr::opts_chunk$set(echo = FALSE,
                       comment = NA,
                       fig.align='center')
 wide_width <-  100
-options(pillar.print_max = 5, pillar.print_min = 5, width = wide_width)
+options(pillar.print_max = 5, 
+        pillar.print_min = 5, 
+        width = wide_width)
+
+
 library(tidyverse)
 library(cubble)
 library(flair)
 library(sf)
 ```
 
+```{r xaringan-scribble, echo=FALSE}
+xaringanExtra::use_scribble()
+```
 
 ```{r xaringan-themer, include=FALSE, warning=FALSE}
 library(xaringanthemer)
@@ -76,7 +83,7 @@ stations_sf <- raw_stations %>%
 ```
 
 ```{r echo = TRUE}
-stations_sf 
+stations_sf
 ```
 
 ]
@@ -174,20 +181,31 @@ class(out4)
 
 * Also, taking a step back, a simple join of the spatial and temporal data is not the best way to structure spatio-temporal data since all the feature geometries are repeated multiple times, especially for long daily data.  
 ---
+class: center, inverse, middle
 
-# Motivation 
+# Cubble
 
-* Multivariate spatio-temporal data usually come in multiple pieces
-
-* Existing spatial and temporal data structure don't seem to live happily together
-
-* A new data structure, `cubble`, that
-  * organises different pieces in a single data object
-  * allows users to access variables easily in the analysis
+## A new tidy data structure to organise and wrangle spatio-temporal data
 
 ???
 
 * This motivates a new data representation for spatio-temporal data
+
+* Today I will introduce a new data structure, called cubble, to organise spatio-temporal data. 
+
+* And we will see how wangling spatio-temporal data can be fun with cubble
+
+
+---
+
+# Multivariate spatio-temporal cubes
+
+```{r}
+knitr::include_graphics("figures/spatio-temporal-cube.png")
+```
+
+
+???
 
 * To think about spatio-temporal data conceptually, we introduce a multivariate spatio-temporal cube
 
@@ -208,21 +226,6 @@ class(out4)
 * Arrays are efficient for computing on numerical values, wrangling special date time classes can be difficult. 
 
 * Thus for the convenient wrangling, we have designed a new spatio-temporal class, called cubble
-
-<!-- * Today I will introduce a new data structure, cubble, that allows you to organise spatio-temporal data in a different way -->
-
-<!-- * so that different pieces of information all live in a single data object and users can easily access variables during the analysis -->
-
-<!-- * I will illustrate the data structure with three examples in this talk -->
-
----
-
-# Multivariate spatio-temporal cubes
-
-```{r}
-knitr::include_graphics("figures/spatio-temporal-cube.png")
-```
-
 
 
 ---
@@ -278,13 +281,6 @@ weather <- as_cubble(list(spatial = stations_sf, temporal = ts),
 weather
 ```
 
---
-
-- There are .sec[47] stations in this data, it is in the nested form and is a subclass of `sf` 
-- Temporal variables are `date`, and `tmax`. Spatial variables: `long, lat, elev, name`, and `wmo_id`
-- Each temporal component is a tsibble containing temporal information
-
-
 ???
 
 * Now I'm going to show you how to create a cubble from the spatial and temporal data we have seen before.
@@ -293,6 +289,15 @@ weather
 
 * Then you can specify the `key` and `index` as what you would do  when creating a `tsibble` and `coords` in the order of longitude and latitude. 
 
+--
+
+- There are .sec[47] stations in this data, it is in the nested form and is a subclass of `sf` 
+- Temporal variables are `date`, and `tmax`. Spatial variables: `long, lat, elev, name`, and `wmo_id`
+- Each temporal component is a tsibble (`tbl_ts`) containing temporal information
+
+
+???
+
 * By default, this create a nested cubble. 
 
 * There is a header summary on cubble objects, here it tells you
@@ -300,7 +305,7 @@ weather
 ---
 # Cubble summary (1/2)
 
-.pull-left-large[
+.pull-left-larger[
 
 ```{r echo = FALSE}
 options(width = 50)
@@ -318,11 +323,12 @@ weather_long
 
 ]
 
+--
+
 .pull-right[
 
 ```{r echo = TRUE}
 attr(weather_long, "spatial")
-# or you can use: spatial(climate_long)
 ```
   
 
@@ -346,9 +352,30 @@ weather_back
 identical(weather_back, weather)
 ```
 
+???
+
+* An example of face_spatial() is shown here where you can get the long form back to the nested form. 
+
+* And the output will be identical to the initial cubble `weather` data we created earlier
+
+* In summary, with cubble, you can perform temporal analysis in the long form, and pivot to the nested form for some spatial analysis, and pivot back to the the long form for some other temporal analysis. 
+
+* Sometimes, you may also need to do some analysis that involves both spatial and temporal variables. 
+
+* Here I will show you how to do that in cubble with an example of making glyph maps.
+
+---
+# Glyphmap basics
 
 
+???
 
+* A glyph map is a transformation of temporal variables into space. 
+* Here I have 5 locations, each has a time series. 
+
+* A glyph map transforms the scale of the time series into the spatial map, so that temporal information can be visualised in a map
+
+* To create a glyph map, you will need information on the spatial coordinates, longitude and latitude, which we call the major axes, and the temporal coordinates, date and value, the minor axes.
 ---
 
 # Transformation to glyphmap
@@ -368,21 +395,6 @@ knitr::include_graphics("figures/migrate.png")
 
 ]
 
-???
-
-* With cubble, you can also do some spatio-temporal transformation and the particular one we will talk about today is the glyph map. 
-
-* A glyph map requires both spatial and temporal variables for the transformation.
-
-* In this transformation, you need longitude, latitude, and the variable of interest across time
-
-* In cubble you can temporarily move some spatial variables into the long form using the verb `migrate()`
-
-* Here is the illustrate and the code shows you with the long form, you migrate long and lat
-
-
---
-
 .pull-right-larger[
 ```{r}
 options(width = 60)
@@ -395,6 +407,15 @@ cb_migrated
 ```
 ]
 
+???
+
+* In a cubble, the major coordinates are stored in the nested form, while minor coordinates are stored in the long form.  
+
+* In cubble you can use the verb `unfold()` to relocate spatial variables into the long form. 
+
+* This is in essence a join operation 
+
+* On the right shows an example of unfold long and lat with the weather data.
 
 ---
 
@@ -408,9 +429,9 @@ knitr::include_graphics(here::here("figures/temperature-workflow.png"))
 
 ???
 
-* Here is a much involved example of comparing Australia temperature in two time periods
+* Now combine everything I have just introduced, here is an example of using cubble to analyse historical temperature
 
-* The data used for this example has a simlar structure as before has a long period that dated back to the 70s, so we can compare how the maximum temperature looks like in the past and nowadays
+* The data used for this example has a similar structure as before has a long period that dated back to the 70s, so we can compare how the maximum temperature looks like in the past and nowadays
 
 * The diagram here shows how different steps in the data analysis can be chained together with cubble 
 
