@@ -22,7 +22,7 @@ class: center, middle, inverse, title-slide
 .author[
 ### <div class="line-block">Sherry Zhang<br />
 <br />
-Collaborators: Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langrené<br />
+Joint work with Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langrené<br />
 <br />
 .pri[<a href="https://sherryzhang-user2022.netlify.app" class="uri">https://sherryzhang-user2022.netlify.app</a>]</div>
 ]
@@ -42,6 +42,8 @@ Collaborators: Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langren�
 
 # Spatial data
 
+.pull-left[
+
 
 
 
@@ -50,21 +52,30 @@ stations_sf
 ```
 
 ```
-Simple feature collection with 47 features and 6 fields
+Simple feature collection with 59 features and 6 fields
 Geometry type: POINT
 Dimension:     XY
-Bounding box:  xmin: 141.2652 ymin: -36.9113 xmax: 153.3633 ymax: -28.9786
+Bounding box:  xmin: 141.2652 ymin: -39.1297 xmax: 153.3633 ymax: -28.9786
 Geodetic CRS:  GDA94
-# A tibble: 47 × 7
-  id           long   lat  elev name                     wmo_id            geometry
-* &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;                     &lt;dbl&gt;         &lt;POINT [°]&gt;
-1 ASN00047016  141. -34.0    43 lake victoria storage     94692 (141.2652 -34.0398)
-2 ASN00047019  142. -32.4    61 menindee post office      94694 (142.4173 -32.3937)
-3 ASN00048015  147. -30.0   115 brewarrina hospital       95512 (146.8651 -29.9614)
-4 ASN00048027  146. -31.5   260 cobar mo                  94711  (145.8294 -31.484)
-5 ASN00048031  149. -29.5   145 collarenebri (albert st)  95520 (148.5818 -29.5407)
-# … with 42 more rows
+# A tibble: 59 × 7
+  id           long   lat  elev name        wmo_id
+* &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;        &lt;dbl&gt;
+1 ASN00047016  141. -34.0    43 lake victo…  94692
+2 ASN00047019  142. -32.4    61 menindee p…  94694
+3 ASN00048015  147. -30.0   115 brewarrina…  95512
+4 ASN00048027  146. -31.5   260 cobar mo     94711
+5 ASN00048031  149. -29.5   145 collareneb…  95520
+# … with 54 more rows, and 1 more variable:
+#   geometry &lt;POINT [°]&gt;
 ```
+
+
+
+]
+
+.pull-right[
+
+&lt;img src="index_files/figure-html/unnamed-chunk-4-1.png" width="504" style="display: block; margin: auto;" /&gt;
 
 ]
 
@@ -88,6 +99,8 @@ Geodetic CRS:  GDA94
 
 # Temporal data
 
+.pull-left-narrow[
+
 
 
 
@@ -96,18 +109,26 @@ ts
 ```
 
 ```
-# A tsibble: 1,085,044 x 3 [1D]
-# Key:       id [47]
+# A tsibble: 1,099,052 x 3 [1D]
+# Key:       id [59]
   id          date        tmax
   &lt;chr&gt;       &lt;date&gt;     &lt;dbl&gt;
-1 ASN00047016 1966-11-01  12.8
-2 ASN00047016 1966-11-02  NA  
-3 ASN00047016 1966-11-03  NA  
-4 ASN00047016 1966-11-04  NA  
-5 ASN00047016 1966-11-05  NA  
-# … with 1,085,039 more rows
+1 ASN00047016 1971-01-01  25  
+2 ASN00047016 1971-01-02  26.9
+3 ASN00047016 1971-01-03  27.5
+4 ASN00047016 1971-01-04  30  
+5 ASN00047016 1971-01-05  34.4
+# … with 1,099,047 more rows
 ```
+]
 
+
+
+.pull-right-long[
+
+&lt;img src="index_files/figure-html/unnamed-chunk-8-1.png" width="720" style="display: block; margin: auto;" /&gt;
+
+]
 
 ???
 
@@ -289,8 +310,8 @@ weather
 ```
 
 ```
-# cubble:   id [47]: nested form [sf]
-# bbox:     [141.26, -36.92, 153.37, -28.97]
+# cubble:   id [59]: nested form [sf]
+# bbox:     [141.26, -39.13, 153.37, -28.97]
 # temporal: date [date], tmax [dbl]
   id           long   lat  elev name                     wmo_id            geometry ts      
   &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;                     &lt;dbl&gt;         &lt;POINT [°]&gt; &lt;list&gt;  
@@ -299,7 +320,7 @@ weather
 3 ASN00048015  147. -30.0   115 brewarrina hospital       95512 (146.8651 -29.9614) &lt;tbl_ts&gt;
 4 ASN00048027  146. -31.5   260 cobar mo                  94711  (145.8294 -31.484) &lt;tbl_ts&gt;
 5 ASN00048031  149. -29.5   145 collarenebri (albert st)  95520 (148.5818 -29.5407) &lt;tbl_ts&gt;
-# … with 42 more rows
+# … with 54 more rows
 ```
 
 ???
@@ -312,7 +333,7 @@ weather
 
 --
 
-- There are .sec[47] stations in this data, it is in the nested form and is a subclass of `sf` 
+- There are .sec[59] stations in this data, it is in the nested form and is a subclass of `sf` 
 - Temporal variables are `date`, and `tmax`. Spatial variables: `long, lat, elev, name`, and `wmo_id`
 - Each temporal component is a tsibble (`tbl_ts`) containing temporal information
 
@@ -332,25 +353,28 @@ weather
 
 
 
-```r
-weather_long &lt;- weather %&gt;% face_temporal()
-weather_long
-```
+
+&lt;code class ='r hljs remark-code'&gt;weather_long &lt;- weather %&gt;% &lt;span style='background-color:#FFEECF'&gt;face_temporal()&lt;/span&gt;&lt;br&gt;weather_long&lt;/code&gt;
 
 ```
-# cubble:  date, id [47]: long form [tsibble]
-# bbox:    [141.26, -36.92, 153.37, -28.97]
-# spatial: long [dbl], lat [dbl], elev [dbl],
-#   name [chr], wmo_id [dbl], geometry [POINT
-#   [°]]
+
+# cubble:  date, id [59]:
+#   long form [tsibble]
+# bbox:    [141.26, -39.13,
+#   153.37, -28.97]
+# spatial: long [dbl], lat
+#   [dbl], elev [dbl], name
+#   [chr], wmo_id [dbl],
+#   geometry [POINT [°]]
   id          date        tmax
   &lt;chr&gt;       &lt;date&gt;     &lt;dbl&gt;
-1 ASN00047016 1966-11-01  12.8
-2 ASN00047016 1966-11-02  NA  
-3 ASN00047016 1966-11-03  NA  
-4 ASN00047016 1966-11-04  NA  
-5 ASN00047016 1966-11-05  NA  
-# … with 1,085,039 more rows
+1 ASN00047016 1971-01-01  25  
+2 ASN00047016 1971-01-02  26.9
+3 ASN00047016 1971-01-03  27.5
+4 ASN00047016 1971-01-04  30  
+5 ASN00047016 1971-01-05  34.4
+# … with 1,099,047 more rows
+
 ```
 
   - now it is a long form cubble and is a subclass of `tsibble`
@@ -365,25 +389,27 @@ weather_long
 
 
 ```r
-attr(weather_long, "spatial")
+attr(weather_long, "spatial") 
 ```
 
 ```
-Simple feature collection with 47 features and 6 fields
+Simple feature collection with 59 features and 6 fields
 Geometry type: POINT
 Dimension:     XY
-Bounding box:  xmin: 141.2652 ymin: -36.9113 xmax: 153.3633 ymax: -28.9786
+Bounding box:  xmin: 141.2652 ymin: -39.1297 xmax: 153.3633 ymax: -28.9786
 Geodetic CRS:  GDA94
-# A tibble: 47 × 7
+# A tibble: 59 × 7
 # Rowwise:  id
-  id           long   lat  elev name        wmo_id
-  &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;        &lt;dbl&gt;
-1 ASN00047016  141. -34.0    43 lake victo…  94692
-2 ASN00047019  142. -32.4    61 menindee p…  94694
-3 ASN00048015  147. -30.0   115 brewarrina…  95512
-4 ASN00048027  146. -31.5   260 cobar mo     94711
-5 ASN00048031  149. -29.5   145 collareneb…  95520
-# … with 42 more rows, and 1 more variable:
+  id          long   lat  elev
+  &lt;chr&gt;      &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+1 ASN000470…  141. -34.0    43
+2 ASN000470…  142. -32.4    61
+3 ASN000480…  147. -30.0   115
+4 ASN000480…  146. -31.5   260
+5 ASN000480…  149. -29.5   145
+# … with 54 more rows, and 3
+#   more variables:
+#   name &lt;chr&gt;, wmo_id &lt;dbl&gt;,
 #   geometry &lt;POINT [°]&gt;
 ```
   
@@ -400,38 +426,47 @@ Geodetic CRS:  GDA94
 
 
 
-```r
-weather_back &lt;- weather_long %&gt;% face_spatial()
-weather_back
-```
+
+
+&lt;code class ='r hljs remark-code'&gt;weather_back &lt;- weather_long %&gt;% &lt;span style='background-color:#FFEECF'&gt;face_spatial()&lt;/span&gt;&lt;br&gt;weather_back&lt;/code&gt;
 
 ```
-# cubble:   id [47]: nested form [sf]
-# bbox:     [141.26, -36.92, 153.37, -28.97]
+
+# cubble:   id [59]: nested form [sf]
+# bbox:     [141.26, -39.13, 153.37, -28.97]
 # temporal: date [date], tmax [dbl]
   id           long   lat  elev name                     wmo_id            geometry ts      
   &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;                     &lt;dbl&gt;         &lt;POINT [°]&gt; &lt;list&gt;  
-1 ASN00047016  141. -34.0    43 lake victoria storage     94692 (141.2652 -34.0398) &lt;tbl_ts&gt;
-2 ASN00047019  142. -32.4    61 menindee post office      94694 (142.4173 -32.3937) &lt;tbl_ts&gt;
-3 ASN00048015  147. -30.0   115 brewarrina hospital       95512 (146.8651 -29.9614) &lt;tbl_ts&gt;
-4 ASN00048027  146. -31.5   260 cobar mo                  94711  (145.8294 -31.484) &lt;tbl_ts&gt;
-5 ASN00048031  149. -29.5   145 collarenebri (albert st)  95520 (148.5818 -29.5407) &lt;tbl_ts&gt;
-# … with 42 more rows
-```
-
-```r
-identical(weather_back, weather)
-```
+1 ASN00047016  141. -34.0    43 lake victoria storage     94692 (141.2652 -34.0398) &lt;tibble&gt;
+2 ASN00047019  142. -32.4    61 menindee post office      94694 (142.4173 -32.3937) &lt;tibble&gt;
+3 ASN00048015  147. -30.0   115 brewarrina hospital       95512 (146.8651 -29.9614) &lt;tibble&gt;
+4 ASN00048027  146. -31.5   260 cobar mo                  94711  (145.8294 -31.484) &lt;tibble&gt;
+5 ASN00048031  149. -29.5   145 collarenebri (albert st)  95520 (148.5818 -29.5407) &lt;tibble&gt;
+# … with 54 more rows
 
 ```
-[1] TRUE
+
+
+
+&lt;code class ='r hljs remark-code'&gt;identical(weather_back, weather)&lt;/code&gt;
+
 ```
 
+[1] FALSE
+
+```
 ???
 
 * An example of face_spatial() is shown here where you can get the long form back to the nested form. 
 
 * And the output will be identical to the initial cubble `weather` data we created earlier
+
+---
+
+# Pipeline with cubble
+
+
+???
 
 * In summary, with cubble, you can perform temporal analysis in the long form, and pivot to the nested form for some spatial analysis, and pivot back to the the long form for some other temporal analysis. 
 
@@ -440,7 +475,7 @@ identical(weather_back, weather)
 * Here I will show you how to do that in cubble with an example of making glyph maps.
 
 ---
-# Glyphmap basics
+# Transform a dot into a glyph
 
 &lt;img src="figures/glyph-steps.png" width="4327" style="display: block; margin: auto;" /&gt;
 
@@ -475,25 +510,27 @@ identical(weather_back, weather)
 
 
 
-```r
-cb_migrated &lt;- weather_long %&gt;% unfold(long, lat)
-cb_migrated
-```
+
+
+
+&lt;code class ='r hljs remark-code'&gt;cb_migrated &lt;- weather_long %&gt;% unfold(long, lat)&lt;br&gt;cb_migrated&lt;/code&gt;
 
 ```
-# cubble:  date, id [47]: long form [tsibble]
-# bbox:    [141.26, -36.92, 153.37, -28.97]
+
+# cubble:  date, id [59]: long form [tsibble]
+# bbox:    [141.26, -39.13, 153.37, -28.97]
 # spatial: long [dbl], lat [dbl], elev [dbl], name [chr],
 #   wmo_id [dbl], geometry [POINT [°]]
   id          date        tmax  long   lat
   &lt;chr&gt;       &lt;date&gt;     &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
-1 ASN00047016 1966-11-01  12.8  141. -34.0
-2 ASN00047016 1966-11-02  NA    141. -34.0
-3 ASN00047016 1966-11-03  NA    141. -34.0
-4 ASN00047016 1966-11-04  NA    141. -34.0
-5 ASN00047016 1966-11-05  NA    141. -34.0
-# … with 1,085,039 more rows, and 1 more variable:
+1 ASN00047016 1971-01-01  25    141. -34.0
+2 ASN00047016 1971-01-02  26.9  141. -34.0
+3 ASN00047016 1971-01-03  27.5  141. -34.0
+4 ASN00047016 1971-01-04  30    141. -34.0
+5 ASN00047016 1971-01-05  34.4  141. -34.0
+# … with 1,099,047 more rows, and 1 more variable:
 #   geometry &lt;POINT [°]&gt;
+
 ```
 ]
 
@@ -538,6 +575,8 @@ cb_migrated
 
 .pull-left-larger[
 
+&lt;br&gt;
+
 
 
 
@@ -546,7 +585,10 @@ cb_migrated
 ]
 
 .pull-right[
-&lt;img src="figures/glyphmap.png" width="4000" style="display: block; margin: auto;" /&gt;
+
+
+
+&lt;img src="index_files/figure-html/unnamed-chunk-28-1.png" width="504" style="display: block; margin: auto;" /&gt;
 
 
 ]

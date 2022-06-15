@@ -3,7 +3,7 @@ title: "cubble: An R Package for Organizing and Wrangling Multivariate Spatio-te
 author: |
   | Sherry Zhang
   | 
-  | Collaborators: Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langrené
+  | Joint work with Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langrené
   | 
   | .pri[https://sherryzhang-user2022.netlify.app]
 date: "2022-06-23"
@@ -37,9 +37,11 @@ options(pillar.print_max = 5,
 
 
 library(tidyverse)
+library(tsibble)
 library(cubble)
 library(flair)
 library(sf)
+library(ggsvg)
 ```
 
 ```{r xaringan-scribble, echo=FALSE}
@@ -70,9 +72,20 @@ style_duo_accent(
 
 # Spatial data
 
+.pull-left[
+
 ```{r}
+ncs <- weatherdata::historical_tmax %>%
+  filter(long > 151, lat < -32.5, lat > -33)
+
 raw <- weatherdata::historical_tmax %>% 
-  filter(between(stringr::str_sub(id, 7, 8), 46, 75))
+  filter(between(stringr::str_sub(id, 7, 8), 46, 90)) %>% 
+  filter(!id %in% c("ASN00071032", "ASN00071041", "ASN00063039")) %>%
+  # remove sydney nearby (only leave sydney airport)
+  filter(!id %in% c("ASN00063039", "ASN00066062", "ASN00066124",
+                    "ASN00066137", "ASN00067033")) %>%
+  # remove newcastle around area (only leave Nelson Bay)
+  filter(!id %in% ncs$id[-1])
 
 raw_stations <- raw %>% 
   select(id: wmo_id) %>% 
@@ -80,10 +93,43 @@ raw_stations <- raw %>%
 
 stations_sf <- raw_stations %>%
   sf::st_as_sf(coords = c("long", "lat"), crs = 4283, remove = FALSE)
+options(width = 50)
 ```
 
 ```{r echo = TRUE}
 stations_sf
+
+```
+
+```{r}
+options(width = wide_width)
+```
+
+]
+
+.pull-right[
+
+```{r fig.retina=3}
+nsw <- ozmaps::abs_ste %>% rmapshaper::ms_simplify() %>% filter(NAME %in% c("New South Wales", "Victoria"))
+
+svg <- readLines(here::here("figures/station-icon.svg"))
+station_svg <- paste(svg, collapse = "\n")
+#grid::grid.draw(svg_to_rasterGrob(station_svg))
+
+ggplot() +
+  geom_sf(data = nsw, fill = "grey95", color = "white") +
+  geom_point_svg(
+    data = stations_sf,
+    aes(long,lat),
+    css("path:nth-child(1)", fill = "#443750"),
+    css("path:nth-child(2)", fill = "#443750"),
+    css("path:nth-child(3)", fill = "#443750"),
+    css("path:nth-child(4)", fill = "#443750"),
+    css("path:nth-child(5)", fill = "#443750"),
+    svg = station_svg) + 
+  scale_svg_default() + 
+  ggthemes::theme_map() 
+  
 ```
 
 ]
@@ -108,14 +154,38 @@ stations_sf
 
 # Temporal data
 
+.pull-left-narrow[
+
 ```{r}
-ts <- raw %>% face_temporal() %>% tsibble::as_tsibble(key = id, index = date)
+ts <- raw %>% 
+  face_temporal() %>% 
+  as_tibble() %>% 
+  tsibble::as_tsibble(key = id, index = date) %>% 
+  filter(lubridate::year(date) >= 1971)
+options(pillar.print_max = 10)
 ```
 
 ```{r echo = TRUE}
 ts
 ```
+]
 
+```{r}
+options(pillar.print_max = 5)
+```
+
+.pull-right-long[
+
+```{r fig.retina=3, fig.width=10}
+ts %>% 
+  filter(lubridate::year(date) == 2020) %>% 
+  ggplot(aes(x = date, y = tmax, group = id)) + 
+  geom_line(alpha = 0.5, color = "#840032") +
+  scale_x_date(date_breaks = "3 months", date_labels = "%Y %b") + 
+  theme_bw()
+```
+
+]
 
 ???
 
@@ -291,7 +361,7 @@ weather
 
 --
 
-- There are .sec[47] stations in this data, it is in the nested form and is a subclass of `sf` 
+- There are .sec[`r nrow(stations_sf)`] stations in this data, it is in the nested form and is a subclass of `sf` 
 - Temporal variables are `date`, and `tmax`. Spatial variables: `long, lat, elev, name`, and `wmo_id`
 - Each temporal component is a tsibble (`tbl_ts`) containing temporal information
 
@@ -308,13 +378,18 @@ weather
 .pull-left-larger[
 
 ```{r echo = FALSE}
-options(width = 50)
+options(width = 30)
 ```
 
-
-```{r echo = TRUE}
+```{r face-temporal, eval = FALSE}
 weather_long <- weather %>% face_temporal()
 weather_long
+```
+
+```{r echo = FALSE}
+flair::decorate_chunk("face-temporal") %>%
+  flair::flair("face_temporal()", background = "#FFEECF") %>% 
+  flair::knit_print.with_flair(width = 50)
 ```
 
   - now it is a long form cubble and is a subclass of `tsibble`
@@ -328,7 +403,7 @@ weather_long
 .pull-right[
 
 ```{r echo = TRUE}
-attr(weather_long, "spatial")
+attr(weather_long, "spatial") 
 ```
   
 
@@ -345,18 +420,30 @@ attr(weather_long, "spatial")
 options(width = wide_width)
 ```
 
-```{r echo = TRUE}
+```{r face-spatial, eval = FALSE}
 weather_back <- weather_long %>% face_spatial()
 weather_back
 
 identical(weather_back, weather)
 ```
 
+```{r echo = FALSE}
+flair::decorate_chunk("face-spatial") %>%
+  flair::flair("face_spatial()", background = "#FFEECF") %>% 
+  flair::knit_print.with_flair()
+```
 ???
 
 * An example of face_spatial() is shown here where you can get the long form back to the nested form. 
 
 * And the output will be identical to the initial cubble `weather` data we created earlier
+
+---
+
+# Pipeline with cubble
+
+
+???
 
 * In summary, with cubble, you can perform temporal analysis in the long form, and pivot to the nested form for some spatial analysis, and pivot back to the the long form for some other temporal analysis. 
 
@@ -365,7 +452,7 @@ identical(weather_back, weather)
 * Here I will show you how to do that in cubble with an example of making glyph maps.
 
 ---
-# Glyphmap basics
+# Transform a dot into a glyph
 
 ```{r}
 knitr::include_graphics(here::here("figures/glyph-steps.png"))
@@ -405,9 +492,16 @@ options(width = 60)
 ```
 
 
-```{r echo = TRUE}
+```{r unfold, eval = FALSE}
 cb_migrated <- weather_long %>% unfold(long, lat)
 cb_migrated
+```
+
+
+```{r echo = FALSE}
+flair::decorate_chunk("unfold") %>%
+  flair::flair("unfold()", background = "#FFEECF") %>% 
+  flair::knit_print.with_flair(width = 50)
 ```
 ]
 
@@ -454,6 +548,8 @@ knitr::include_graphics(here::here("figures/temperature-workflow.png"))
 
 .pull-left-larger[
 
+<br>
+
 ```{r glyph, eval = FALSE}
 tmax <- DATA %>% 
   filter(NSW_STATIONS) %>% 
@@ -487,8 +583,72 @@ flair::decorate_chunk("glyph", eval = FALSE) %>%
 ]
 
 .pull-right[
-```{r}
-knitr::include_graphics(here::here("figures/glyphmap.png"))
+
+```{r inset, eval = FALSE}
+tmax |> filter(id == "ASN00048027") |>
+  ggplot(aes(x = month,
+             y = tmax,
+             color = group)) +
+  geom_line(size = 1.5) +
+  scale_color_brewer(palette = "Dark2", guide = "none") +
+  scale_x_continuous(breaks = seq(1, 12, 1), 
+                     labels = c("J", "F", "M", "A", "M", "J", 
+                                "J", "A", "S", "O", "N", "D")) +
+  labs(x = "", y  = "Temp (C)", title = "ASN00048027: Cobar") +
+  theme_bw() +
+  theme(
+    aspect.ratio = 0.3,
+    axis.text = element_text(size = 20),
+    title =  element_text(size = 20)
+  )
+ggsave(filename = here::here("figures/cobar-inset.png"), width = 7, height = 3)
+```
+
+```{r fig.retina=3}
+tmax <- weatherdata::historical_tmax %>% 
+  filter(between(stringr::str_sub(id, 7, 8), 46, 90)) |>
+   filter(!id %in% c("ASN00071032", "ASN00071041", "ASN00063039")) %>%
+  # remove sydney nearby (only leave sydney airport)
+  filter(!id %in% c("ASN00063039", "ASN00066062", "ASN00066124",
+                    "ASN00066137", "ASN00067033")) %>%
+  # remove newcastle around area (only leave Nelson Bay)
+  face_temporal() |>
+  filter(lubridate::year(date) %in% c(1971:1975, 2016:2020)) %>% 
+  group_by(month = lubridate::month(date),
+           group = as.factor(ifelse(lubridate::year(date) > 2015,
+                                    "2016 ~ 2020", "1971 ~ 1975"))) |>
+  summarise(tmax = mean(tmax, na.rm = TRUE)) %>% 
+  face_spatial() |> 
+  filter(nrow(ts) == 24) %>% 
+  face_temporal() |> 
+  unfold(long, lat)
+
+nsw_vic <- ozmaps::abs_ste |> filter(NAME %in% c("Victoria", "New South Wales"))
+
+p1 <- ggplot() + 
+  geom_sf(data = nsw_vic, fill = "grey95", color = "white") + 
+  geom_glyph(data = tmax, 
+             aes(x_major = long, x_minor = month, 
+                 y_major = lat, y_minor = tmax,
+                 group = interaction(id, group), 
+                 color = group),
+             width = 1, height = 0.5) +
+  scale_color_brewer("", palette = "Dark2") + 
+  coord_sf(xlim = c(141, 154), ylim = c(-39, -28.5)) + 
+  ggthemes::theme_map() +
+  theme(legend.position = "bottom") +
+  labs(x = "Longitude", y = "Latitude")
+
+box_df <- tmax |> face_spatial() |> filter(id == "ASN00048027")
+single <- tibble::tibble(img = here::here("figures/cobar-inset.png"))
+
+p1 +
+  geom_rect(data = box_df,
+            aes(xmin = long - 0.6, xmax = long + 0.6,
+                ymin = lat - 0.12, ymax = lat + 0.35),
+            fill = "transparent", color = "black") +
+  ggimg::geom_point_img(
+    data = single, aes(x = 143.5, y = -30, img = img), size = 6)
 ```
 
 

@@ -22,6 +22,16 @@
 }
 
 
+.pull-right-long {
+  float: right;
+  width: 70%;
+}
+
+.pull-left-narrow{
+  float: left;
+  width: 30%;
+}
+
 .center{
   text-align: "center";
   font-size: 35px;
