@@ -24,12 +24,12 @@
 
 .pull-right-long {
   float: right;
-  width: 70%;
+  width: 58%;
 }
 
 .pull-left-narrow{
   float: left;
-  width: 30%;
+  width: 39%;
 }
 
 .center{
@@ -37,3 +37,5 @@
   font-size: 35px;
   color: "EEFFCF";
 }
+
+

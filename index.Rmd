@@ -42,6 +42,8 @@ library(cubble)
 library(flair)
 library(sf)
 library(ggsvg)
+light_purple <- colorRampPalette(c("black","#443750",  "white"))( 20 )[14]
+light_pink <- colorRampPalette(c("#840032",  "white"))( 20 )[10]
 ```
 
 ```{r xaringan-scribble, echo=FALSE}
@@ -97,7 +99,7 @@ options(width = 50)
 ```
 
 ```{r echo = TRUE}
-stations_sf
+stations_sf 
 
 ```
 
@@ -378,7 +380,7 @@ weather
 .pull-left-larger[
 
 ```{r echo = FALSE}
-options(width = 30)
+options(width = 50)
 ```
 
 ```{r face-temporal, eval = FALSE}
@@ -387,9 +389,9 @@ weather_long
 ```
 
 ```{r echo = FALSE}
-flair::decorate_chunk("face-temporal") %>%
-  flair::flair("face_temporal()", background = "#FFEECF") %>% 
-  flair::knit_print.with_flair(width = 50)
+decorate_chunk("face-temporal") %>%
+  flair("face_temporal()", background = "#FFEECF") %>% 
+  knit_print.with_flair(width = 50)
 ```
 
   - now it is a long form cubble and is a subclass of `tsibble`
@@ -428,9 +430,9 @@ identical(weather_back, weather)
 ```
 
 ```{r echo = FALSE}
-flair::decorate_chunk("face-spatial") %>%
-  flair::flair("face_spatial()", background = "#FFEECF") %>% 
-  flair::knit_print.with_flair()
+decorate_chunk("face-spatial") %>%
+  flair("face_spatial()", background = "#FFEECF") %>% 
+  knit_print.with_flair()
 ```
 ???
 
@@ -441,6 +443,70 @@ flair::decorate_chunk("face-spatial") %>%
 ---
 
 # Pipeline with cubble
+
+.pull-left-narrow[
+```{r cb-code, eval = FALSE}
+cb_obj %>% 
+  {{ Your spatial analysis }} %>% 
+  face_temporal() %>% 
+  {{ Your temporal analysis }} %>% 
+  face_spatial() %>% 
+  {{ Your spatial analysis }} 
+```
+
+
+```{r echo = FALSE}
+decorate_chunk("cb-code", eval = FALSE) %>%
+  flair("{{ Your spatial analysis }}" , background = light_purple) %>% 
+  flair("{{ Your temporal analysis }}" , background = light_pink) %>% 
+  flair("face_temporal()" , background = "#FFEECF") %>% 
+  flair("face_spatial()" , background = "#FFEECF") %>% 
+  knit_print.with_flair()
+
+```
+
+]
+
+.pull-right-long[
+```{r conv-code, eval = FALSE}
+spatial <- stations_sf %>% 
+  {{ Your spatial analysis }} 
+
+##############################
+# more subsetting step if temporal analysis
+# depends on spatial results
+sp_id <- spatial %>% pull(id)
+ts_subset <- ts %>% filter(id %in% sp_id)
+##############################
+
+temporal <- ts_subset %>% 
+  {{ Your temporal analysis }} 
+
+##############################
+# more subsetting step if spatial analysis 
+# depends on temporal results
+ts_id <- temporal %>% pull(id)
+sp_subset <- spatial %>% filter(id %in% ts_id)
+##############################
+
+sp_subset %>% 
+  {{ Your spatial analysis }} 
+  
+```
+
+<!-- # "#443750",  secondary_color = "#840032", -->
+```{r echo = FALSE}
+
+decorate("conv-code", eval = FALSE) %>%
+  flair("{{ Your spatial analysis }}" , background = light_purple) %>% 
+  flair("{{ Your temporal analysis }}" , background = light_pink) %>% 
+  flair("sp_id <- spatial %>% pull(id)" , background = "#FFEECF") %>% 
+  flair("ts_subset <- ts %>% filter(id %in% sp_id)" , background = "#FFEECF") %>% 
+  flair("ts_id <- temporal %>% pull(id)" , background = "#FFEECF") %>% 
+  flair("sp_subset <- spatial %>% filter(id %in% ts_id)" , background = "#FFEECF") %>% 
+  knit_print.with_flair()
+```
+]
 
 
 ???
@@ -455,7 +521,29 @@ flair::decorate_chunk("face-spatial") %>%
 # Transform a dot into a glyph
 
 ```{r}
-knitr::include_graphics(here::here("figures/glyph-steps.png"))
+knitr::include_graphics(here::here("figures/glyph-steps1.png"))
+```
+
+---
+# Transform a dot into a glyph
+
+```{r}
+knitr::include_graphics(here::here("figures/glyph-steps2.png")) 
+```
+
+---
+# Transform a dot into a glyph
+
+
+```{r}
+knitr::include_graphics(here::here("figures/glyph-steps3.png"))
+```
+
+---
+# Transform a dot into a glyph
+
+```{r out.height="100%"}
+knitr::include_graphics(here::here("figures/glyph-steps4.png"))
 ```
 
 
@@ -499,9 +587,9 @@ cb_migrated
 
 
 ```{r echo = FALSE}
-flair::decorate_chunk("unfold") %>%
-  flair::flair("unfold()", background = "#FFEECF") %>% 
-  flair::knit_print.with_flair(width = 50)
+decorate_chunk("unfold") %>%
+  flair("unfold()", background = "#FFEECF") %>% 
+  knit_print.with_flair(width = 50)
 ```
 ]
 
@@ -571,13 +659,13 @@ tmax %>%
 ```
 
 ```{r echo = FALSE}
-flair::decorate_chunk("glyph", eval = FALSE) %>%
-  flair::flair("face_spatial", background = "#FFEECF") %>% 
-  flair::flair("face_temporal", background = "#FFEECF") %>% 
-  flair::flair("unfold", background = "#FFEECF") %>% 
-  flair::flair("geom_glyph_box", background = "#FFEECF") %>% 
-  flair::flair("geom_glyph", background = "#FFEECF") %>% 
-  flair::knit_print.with_flair()
+decorate_chunk("glyph", eval = FALSE) %>%
+  flair("face_spatial", background = "#FFEECF") %>% 
+  flair("face_temporal", background = "#FFEECF") %>% 
+  flair("unfold", background = "#FFEECF") %>% 
+  flair("geom_glyph_box", background = "#FFEECF") %>% 
+  flair("geom_glyph", background = "#FFEECF") %>% 
+  knit_print.with_flair()
 ```
 
 ]

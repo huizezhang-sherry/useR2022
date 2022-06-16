@@ -48,7 +48,7 @@ Joint work with Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langren
 
 
 ```r
-stations_sf
+stations_sf 
 ```
 
 ```
@@ -58,15 +58,14 @@ Dimension:     XY
 Bounding box:  xmin: 141.2652 ymin: -39.1297 xmax: 153.3633 ymax: -28.9786
 Geodetic CRS:  GDA94
 # A tibble: 59 × 7
-  id           long   lat  elev name        wmo_id
-* &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;        &lt;dbl&gt;
-1 ASN00047016  141. -34.0    43 lake victo…  94692
-2 ASN00047019  142. -32.4    61 menindee p…  94694
-3 ASN00048015  147. -30.0   115 brewarrina…  95512
-4 ASN00048027  146. -31.5   260 cobar mo     94711
-5 ASN00048031  149. -29.5   145 collareneb…  95520
-# … with 54 more rows, and 1 more variable:
-#   geometry &lt;POINT [°]&gt;
+  id           long   lat  elev name                     wmo_id            geometry
+* &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;                     &lt;dbl&gt;         &lt;POINT [°]&gt;
+1 ASN00047016  141. -34.0    43 lake victoria storage     94692 (141.2652 -34.0398)
+2 ASN00047019  142. -32.4    61 menindee post office      94694 (142.4173 -32.3937)
+3 ASN00048015  147. -30.0   115 brewarrina hospital       95512 (146.8651 -29.9614)
+4 ASN00048027  146. -31.5   260 cobar mo                  94711  (145.8294 -31.484)
+5 ASN00048031  149. -29.5   145 collarenebri (albert st)  95520 (148.5818 -29.5407)
+# … with 54 more rows
 ```
 
 
@@ -358,14 +357,9 @@ weather
 
 ```
 
-# cubble:  date, id [59]:
-#   long form [tsibble]
-# bbox:    [141.26, -39.13,
-#   153.37, -28.97]
-# spatial: long [dbl], lat
-#   [dbl], elev [dbl], name
-#   [chr], wmo_id [dbl],
-#   geometry [POINT [°]]
+# cubble:  date, id [59]: long form [tsibble]
+# bbox:    [141.26, -39.13, 153.37, -28.97]
+# spatial: long [dbl], lat [dbl], elev [dbl], name [chr], wmo_id [dbl], geometry [POINT [°]]
   id          date        tmax
   &lt;chr&gt;       &lt;date&gt;     &lt;dbl&gt;
 1 ASN00047016 1971-01-01  25  
@@ -393,24 +387,15 @@ attr(weather_long, "spatial")
 ```
 
 ```
-Simple feature collection with 59 features and 6 fields
-Geometry type: POINT
-Dimension:     XY
-Bounding box:  xmin: 141.2652 ymin: -39.1297 xmax: 153.3633 ymax: -28.9786
-Geodetic CRS:  GDA94
 # A tibble: 59 × 7
-# Rowwise:  id
-  id          long   lat  elev
-  &lt;chr&gt;      &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
-1 ASN000470…  141. -34.0    43
-2 ASN000470…  142. -32.4    61
-3 ASN000480…  147. -30.0   115
-4 ASN000480…  146. -31.5   260
-5 ASN000480…  149. -29.5   145
-# … with 54 more rows, and 3
-#   more variables:
-#   name &lt;chr&gt;, wmo_id &lt;dbl&gt;,
-#   geometry &lt;POINT [°]&gt;
+  id           long   lat  elev name                     wmo_id            geometry
+  &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;                     &lt;dbl&gt;         &lt;POINT [°]&gt;
+1 ASN00047016  141. -34.0    43 lake victoria storage     94692 (141.2652 -34.0398)
+2 ASN00047019  142. -32.4    61 menindee post office      94694 (142.4173 -32.3937)
+3 ASN00048015  147. -30.0   115 brewarrina hospital       95512 (146.8651 -29.9614)
+4 ASN00048027  146. -31.5   260 cobar mo                  94711  (145.8294 -31.484)
+5 ASN00048031  149. -29.5   145 collarenebri (albert st)  95520 (148.5818 -29.5407)
+# … with 54 more rows
 ```
   
 
@@ -432,7 +417,7 @@ Geodetic CRS:  GDA94
 
 ```
 
-# cubble:   id [59]: nested form [sf]
+# cubble:   id [59]: nested form
 # bbox:     [141.26, -39.13, 153.37, -28.97]
 # temporal: date [date], tmax [dbl]
   id           long   lat  elev name                     wmo_id            geometry ts      
@@ -465,6 +450,23 @@ Geodetic CRS:  GDA94
 
 # Pipeline with cubble
 
+.pull-left-narrow[
+
+
+
+
+&lt;code class ='r hljs remark-code'&gt;cb_obj %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#888090'&gt;{{ Your spatial analysis }}&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_temporal()&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#BE7893'&gt;{{ Your temporal analysis }}&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_spatial()&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#888090'&gt;{{ Your spatial analysis }}&lt;/span&gt;&lt;/code&gt;
+
+]
+
+.pull-right-long[
+
+
+&lt;!-- # "#443750",  secondary_color = "#840032", --&gt;
+
+&lt;code class ='r hljs remark-code'&gt;spatial &lt;- stations_sf %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#888090'&gt;{{ Your spatial analysis }}&lt;/span&gt; &lt;br&gt;&lt;br&gt;##############################&lt;br&gt;# more subsetting step if temporal analysis&lt;br&gt;# depends on spatial results&lt;br&gt;&lt;span style='background-color:#FFEECF'&gt;sp_id &lt;- spatial %&gt;% pull(id)&lt;/span&gt;&lt;br&gt;&lt;span style='background-color:#FFEECF'&gt;ts_subset &lt;- ts %&gt;% filter(id %in% sp_id)&lt;/span&gt;&lt;br&gt;##############################&lt;br&gt;&lt;br&gt;temporal &lt;- ts_subset %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#BE7893'&gt;{{ Your temporal analysis }}&lt;/span&gt; &lt;br&gt;&lt;br&gt;##############################&lt;br&gt;# more subsetting step if spatial analysis &lt;br&gt;# depends on temporal results&lt;br&gt;&lt;span style='background-color:#FFEECF'&gt;ts_id &lt;- temporal %&gt;% pull(id)&lt;/span&gt;&lt;br&gt;&lt;span style='background-color:#FFEECF'&gt;sp_subset &lt;- spatial %&gt;% filter(id %in% ts_id)&lt;/span&gt;&lt;br&gt;##############################&lt;br&gt;&lt;br&gt;sp_subset %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#888090'&gt;{{ Your spatial analysis }}&lt;/span&gt;&lt;/code&gt;
+]
+
 
 ???
 
@@ -477,7 +479,23 @@ Geodetic CRS:  GDA94
 ---
 # Transform a dot into a glyph
 
-&lt;img src="figures/glyph-steps.png" width="4327" style="display: block; margin: auto;" /&gt;
+&lt;img src="figures/glyph-steps1.png" width="3255" style="display: block; margin: auto;" /&gt;
+
+---
+# Transform a dot into a glyph
+
+&lt;img src="figures/glyph-steps2.png" width="3255" style="display: block; margin: auto;" /&gt;
+
+---
+# Transform a dot into a glyph
+
+
+&lt;img src="figures/glyph-steps3.png" width="3255" style="display: block; margin: auto;" /&gt;
+
+---
+# Transform a dot into a glyph
+
+&lt;img src="figures/glyph-steps4.png" width="3255" height="100%" style="display: block; margin: auto;" /&gt;
 
 
 ???
@@ -528,8 +546,7 @@ Geodetic CRS:  GDA94
 3 ASN00047016 1971-01-03  27.5  141. -34.0
 4 ASN00047016 1971-01-04  30    141. -34.0
 5 ASN00047016 1971-01-05  34.4  141. -34.0
-# … with 1,099,047 more rows, and 1 more variable:
-#   geometry &lt;POINT [°]&gt;
+# … with 1,099,047 more rows
 
 ```
 ]
@@ -588,7 +605,7 @@ Geodetic CRS:  GDA94
 
 
 
-&lt;img src="index_files/figure-html/unnamed-chunk-28-1.png" width="504" style="display: block; margin: auto;" /&gt;
+&lt;img src="index_files/figure-html/unnamed-chunk-33-1.png" width="504" style="display: block; margin: auto;" /&gt;
 
 
 ]
