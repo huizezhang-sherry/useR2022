@@ -600,7 +600,7 @@ attr(weather_long, "spatial")
 
 
 
-&lt;code class ='r hljs remark-code'&gt;tmax &lt;- DATA %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;filter(NSW_STATIONS) %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_temporal&lt;/span&gt;() %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;filter(DATE_IN_TWO_GROUPS) %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;summarise() %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_spatial&lt;/span&gt;() %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;filter(NO_MISSING_VALUE) %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_temporal&lt;/span&gt;() %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;unfold&lt;/span&gt;(long, lat)&lt;br&gt;&lt;br&gt;tmax %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;ggplot(aes(x_minor = lubridate::month(date), &lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;y_minor = tmax, &lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;x_major = long, &lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;y_major = lat)) + &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;&lt;span style='background-color:#FFEECF'&gt;geom_glyph&lt;/span&gt;_box&lt;/span&gt;() + &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;geom_glyph&lt;/span&gt;()&lt;/code&gt;
+&lt;code class ='r hljs remark-code'&gt;tmax &lt;- DATA %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#888090'&gt;{{filter NSW &amp; VIC stations}}&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_temporal()&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#BE7893'&gt;{{group by month and period (71-75, 16-20)}}&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#BE7893'&gt;{{summarise into monthly average}}&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_spatial()&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#888090'&gt;{{filter groups have no historical record}} &lt;/span&gt;%&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_temporal()&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;unfold(long, lat)&lt;/span&gt;&lt;br&gt;&lt;br&gt;tmax %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;ggplot(aes(x_minor = lubridate::month(date), &lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;y_minor = tmax, &lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;x_major = long, &lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;y_major = lat)) + &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;geom_glyph&lt;/span&gt;()&lt;/code&gt;
 
 ]
 
@@ -623,6 +623,10 @@ attr(weather_long, "spatial")
 
 * One information I read from this plot is in the past, the average maximum temperature from December to February are almost the same, while these days, January stands out to be hotter for the inland stations
 
+* Use the normal dplyr syntax to work with two tables, you will need to repeat the filter step two times, one on each table. But with cubble, once a filter on the nested form, it will also update the data in the long form. 
+
+* With dplyr syntax, there will be multiple intermediate objects created during the analysis, as we have seen before in the code comparison, but here, we can pipe through all the steps with only one object created. 
+
 
 
 
@@ -633,19 +637,19 @@ class: inverse, middle
 
 # More you can do with cubble
 
+* Pick up unmatched entries from the spatial and temporal inputs 
+
+--
+
 * Merge two data sources by spatial and temporal similarities
 
 --
 
-* Alternative objects accepted as components:
-
-  * Spatial data can be represented as an .inverse-code[sf] or .inverse-code[S2 LngLat], spatial objects
-
-  * Temporal data can be represented as a .inverse-code[tsibble], a special temporal data object
+* Handle (spatial) hierarchical structure of sites
 
 --
 
-* Input data can be of various forms, including .inverse-code[netCDF] and .inverse-code[tibble variates] (i.e. grouped and rowwise data frame)
+* Input data can be of various forms, including .inverse-code[netCDF] and other .inverse-code[tibble variates] (i.e. grouped and rowwise data frame)
 
 ---
 background-image: url("figures/3cubes-in-one.png")
@@ -662,7 +666,7 @@ Slides created via the R package [.inverse-code[xaringan]](https://github.com/yi
 
 &lt;br&gt;
 
-.inverse-code[<svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:currentColor;overflow:visible;position:relative;"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg>] cubble package: https://github.com/huizezhang-sherry/cubble
+.inverse-code[<svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:currentColor;overflow:visible;position:relative;"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg>] Install the latest version of cubble: remotes::install_github("huizezhang-sherry/cubble")
 
 &lt;br&gt;
 

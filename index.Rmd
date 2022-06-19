@@ -640,12 +640,12 @@ knitr::include_graphics(here::here("figures/temperature-workflow.png"))
 
 ```{r glyph, eval = FALSE}
 tmax <- DATA %>% 
-  filter(NSW_STATIONS) %>% 
+  {{filter NSW & VIC stations}} %>% 
   face_temporal() %>% 
-  filter(DATE_IN_TWO_GROUPS) %>% 
-  summarise() %>% 
+  {{group by month and period (71-75, 16-20)}} %>% 
+  {{summarise into monthly average}} %>% 
   face_spatial() %>% 
-  filter(NO_MISSING_VALUE) %>% 
+  {{filter groups have no historical record}} %>% 
   face_temporal() %>% 
   unfold(long, lat)
 
@@ -654,16 +654,19 @@ tmax %>%
              y_minor = tmax, 
              x_major = long, 
              y_major = lat)) + 
-  geom_glyph_box() + 
-  geom_glyph()
+  geom_glyph() + 
+  ...
 ```
 
 ```{r echo = FALSE}
 decorate_chunk("glyph", eval = FALSE) %>%
-  flair("face_spatial", background = "#FFEECF") %>% 
-  flair("face_temporal", background = "#FFEECF") %>% 
-  flair("unfold", background = "#FFEECF") %>% 
-  flair("geom_glyph_box", background = "#FFEECF") %>% 
+  flair("face_spatial()", background = "#FFEECF") %>% 
+  flair("face_temporal()", background = "#FFEECF") %>% 
+  flair("{{filter NSW & VIC stations}}" , background = light_purple) %>%
+  flair("{{filter groups have no historical record}} " , background = light_purple) %>% 
+  flair("{{group by month and period (71-75, 16-20)}}" , background = light_pink) %>% 
+  flair("{{summarise into monthly average}}" , background = light_pink) %>% 
+  flair("unfold(long, lat)", background = "#FFEECF") %>% 
   flair("geom_glyph", background = "#FFEECF") %>% 
   knit_print.with_flair()
 ```
@@ -752,6 +755,10 @@ p1 +
 
 * One information I read from this plot is in the past, the average maximum temperature from December to February are almost the same, while these days, January stands out to be hotter for the inland stations
 
+* Use the normal dplyr syntax to work with two tables, you will need to repeat the filter step two times, one on each table. But with cubble, once a filter on the nested form, it will also update the data in the long form. 
+
+* With dplyr syntax, there will be multiple intermediate objects created during the analysis, as we have seen before in the code comparison, but here, we can pipe through all the steps with only one object created. 
+
 
 
 ```{r}
@@ -765,19 +772,19 @@ class: inverse, middle
 
 # More you can do with cubble
 
+* Pick up unmatched entries from the spatial and temporal inputs 
+
+--
+
 * Merge two data sources by spatial and temporal similarities
 
 --
 
-* Alternative objects accepted as components:
-
-  * Spatial data can be represented as an .inverse-code[sf] or .inverse-code[S2 LngLat], spatial objects
-
-  * Temporal data can be represented as a .inverse-code[tsibble], a special temporal data object
+* Handle (spatial) hierarchical structure of sites
 
 --
 
-* Input data can be of various forms, including .inverse-code[netCDF] and .inverse-code[tibble variates] (i.e. grouped and rowwise data frame)
+* Input data can be of various forms, including .inverse-code[netCDF] and other .inverse-code[tibble variates] (i.e. grouped and rowwise data frame)
 
 ---
 background-image: url("figures/3cubes-in-one.png")
@@ -794,7 +801,7 @@ Slides created via the R package [.inverse-code[xaringan]](https://github.com/yi
 
 <br>
 
-.inverse-code[`r fontawesome::fa("link")`] cubble package: https://github.com/huizezhang-sherry/cubble
+.inverse-code[`r fontawesome::fa("link")`] Install the latest version of cubble: remotes::install_github("huizezhang-sherry/cubble")
 
 <br>
 
