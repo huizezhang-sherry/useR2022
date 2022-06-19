@@ -359,7 +359,9 @@ weather
 
 # cubble:  date, id [59]: long form [tsibble]
 # bbox:    [141.26, -39.13, 153.37, -28.97]
-# spatial: long [dbl], lat [dbl], elev [dbl], name [chr], wmo_id [dbl], geometry [POINT [°]]
+# spatial: long [dbl], lat [dbl], elev [dbl],
+#   name [chr], wmo_id [dbl], geometry [POINT
+#   [°]]
   id          date        tmax
   &lt;chr&gt;       &lt;date&gt;     &lt;dbl&gt;
 1 ASN00047016 1971-01-01  25  
@@ -388,14 +390,15 @@ attr(weather_long, "spatial")
 
 ```
 # A tibble: 59 × 7
-  id           long   lat  elev name                     wmo_id            geometry
-  &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;                     &lt;dbl&gt;         &lt;POINT [°]&gt;
-1 ASN00047016  141. -34.0    43 lake victoria storage     94692 (141.2652 -34.0398)
-2 ASN00047019  142. -32.4    61 menindee post office      94694 (142.4173 -32.3937)
-3 ASN00048015  147. -30.0   115 brewarrina hospital       95512 (146.8651 -29.9614)
-4 ASN00048027  146. -31.5   260 cobar mo                  94711  (145.8294 -31.484)
-5 ASN00048031  149. -29.5   145 collarenebri (albert st)  95520 (148.5818 -29.5407)
-# … with 54 more rows
+  id           long   lat  elev name        wmo_id
+  &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;        &lt;dbl&gt;
+1 ASN00047016  141. -34.0    43 lake victo…  94692
+2 ASN00047019  142. -32.4    61 menindee p…  94694
+3 ASN00048015  147. -30.0   115 brewarrina…  95512
+4 ASN00048027  146. -31.5   260 cobar mo     94711
+5 ASN00048031  149. -29.5   145 collareneb…  95520
+# … with 54 more rows, and 1 more variable:
+#   geometry &lt;POINT [°]&gt;
 ```
   
 
@@ -519,7 +522,7 @@ attr(weather_long, "spatial")
 &lt;!-- What if you want to work with  both spatial or temporal variables? --&gt;
 
 .pull-left[
-&lt;img src="figures/migrate.png" width="500" height="400" style="display: block; margin: auto;" /&gt;
+&lt;img src="figures/unfold.png" width="500" height="500" style="display: block; margin: auto;" /&gt;
 
 ]
 

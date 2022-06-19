@@ -568,8 +568,8 @@ knitr::include_graphics(here::here("figures/glyph-steps4.png"))
 <!-- What if you want to work with  both spatial or temporal variables? -->
 
 .pull-left[
-```{r out.height = 400, out.width = 500}
-knitr::include_graphics("figures/migrate.png")
+```{r out.height=500, out.width = 500}
+knitr::include_graphics("figures/unfold.png")
 ```
 
 ]
