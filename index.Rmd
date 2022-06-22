@@ -1,7 +1,7 @@
 ---
 title: "cubble: An R Package for Organizing and Wrangling Multivariate Spatio-temporal Data"
 author: |
-  | Sherry Zhang
+  | H. Sherry Zhang
   | 
   | Joint work with Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langrené
   | 
@@ -74,6 +74,7 @@ style_duo_accent(
 
 # Spatial data
 
+
 .pull-left[
 
 ```{r}
@@ -99,7 +100,7 @@ options(width = 50)
 ```
 
 ```{r echo = TRUE}
-stations_sf 
+stations_sf
 
 ```
 
@@ -136,22 +137,19 @@ ggplot() +
 
 ]
 
+
+
 ???
 
 * Thanks everyone for coming 
 
 * The title of my talk today is
 
-* In my supervisor team are
+* Here is the link to this slide and the link now is also available in the chat. 
 
-* Here is the link to this slides, in case you would like to go back and forth while I'm talking
+* Spatial data are a common type of data and here there are 59 weather stations distributed in New South Wales and Victoria in Australia
 
-* Spatial data is common and here is a [...]
-
-* The sf class uses a list column to store the feature geometries, including points, lines, polygons, multipolygons
-
-* With the sf class, we can do various geometrical operations in the space
-
+* The data are organised in an `sf` class and the package `sf` provides various geometrical operations in the space for this class 
 ---
 
 # Temporal data
@@ -191,11 +189,13 @@ ts %>%
 
 ???
 
-* Temporal data is also common 
+* Temporal data are another common data type 
 
-* Here we have an object named `ts`, which contains ...
+* Here I'm showing you some historical daily temperature data for those 59 stations. 
 
-* It is stored in a `tsibble` class with `id` as the key to define each series and `date` as the index to define the time stamp. 
+* On the right, a fraction of the data in year 2020 is plotted
+
+* This data is stored in a `tsibble` class, with `id` as the key to define each series and `date` as the index to define the time stamp. 
 
 * With the `tsibble` class, you can do many temporal wrangling and build temporal models. 
 
@@ -203,35 +203,38 @@ ts %>%
 
 # Spatio-temporal data 
 
-When left joining an `sf` object with a `tsibble`, the `tsibble` class gets lost: 
+When left joining an `sf` object with a `tsibble` object, the `tsibble` class (`tbl_ts`) gets lost: 
 
-```{r echo = TRUE}
+```{r sf-tsibble, echo = TRUE}
 out <- stations_sf %>% left_join(ts, by = "id")
 class(out)
 ```
 
 When left joining the other way around, you lost the `sf` class:
 
-```{r echo = TRUE}
+```{r tsibble-sf, echo = TRUE}
 out2 <- ts %>% left_join(stations_sf, by = "id")
 class(out2)
 ```
 
 ???
 
+* However, spatial objects and temporal objects do not naturally work well together for spatio-temporal analysis. 
 
-* However, these spatial objects and temporal objects are punching each other's face when combined together for spatio-temporal analysis. 
-* Here if I join ...
+* Here let me give you some examples
 
-* if I join it ...
+* If I join an sf object with a tsibble object, the tsibble class would gets lost
+
+* The `sf` class gets lost, if the data is joined in the other way around,
 
 ---
 
 # Multivariate spatio-temporal data
 
-You can manually coerce the joined object to have both classes:
+You can manually enforce the joined object to have both classes:
 
 ```{r echo = TRUE}
+out2 <- ts %>% left_join(stations_sf, by = "id")
 out3 <- out2 %>% st_as_sf()
 class(out3)
 ```
@@ -245,13 +248,17 @@ class(out4)
 
 ???
 
-* There is ways to enforce both the `tsibble` and `sf` class in the data object. 
+* We can manually enforce the joined object to have both classes  with the function `st_as_sf()`
 
-* But the class label can still get lost when using operations from one class. 
+* But the class label can still get lost during operations.
 
 * Here I use a tsibble function `fill_gaps` and the output no longer has the `sf` class
 
-* Also, taking a step back, a simple join of the spatial and temporal data is not the best way to structure spatio-temporal data since all the feature geometries are repeated multiple times, especially for long daily data.  
+* Also, taking a step back, the left join approach on spatial and temporal data is not necessarily the best way to structure spatio-temporal data 
+* This is because all the feature geometries are repeated multiple times, especially for long daily data, like the `ts` data I just show you.
+
+* This motivates a new data representation 
+
 ---
 class: center, inverse, middle
 
@@ -261,11 +268,9 @@ class: center, inverse, middle
 
 ???
 
-* This motivates a new data representation for spatio-temporal data
-
 * Today I will introduce a new data structure, called cubble, to organise spatio-temporal data. 
 
-* And we will see how wangling spatio-temporal data can be fun with cubble
+* And we will see how wangling the data with cubble can be fun 
 
 
 ---
@@ -279,26 +284,21 @@ knitr::include_graphics("figures/spatio-temporal-cube.png")
 
 ???
 
-* To think about spatio-temporal data conceptually, we introduce a multivariate spatio-temporal cube
+* Conceptually spatio-temporal data can be thought of as a data cube
 
-* Here the cube is defined slightly different from a conventional spatio-temporal cube. 
+* Here we define the cube slightly different from a conventional cube. The three axes are Time, Site, and Variable.
 
-* Rather than stacking spatial snapshots across time, here the cube has three axes: Time, Site, and Variable
+* The axis *Site* encompasses the coordinates longitude and latitude and longitude and we make an assumption that an entity has a fixed location. 
 
-* Here latitude and longitude only takes one dimension as **Site** and make an assumption that an entity has a fixed location. 
+* The axis **Variable** is used to represent multivariate information.
 
-* **Variable** is used to represent multivariate information in the spatio-temporal data. 
-
-* We define the data in this way to avoid introducing hypercubes for multivariate information. 
+* We define the data in this way to avoid introducing hypercubes for multivariate information in the conventional cube. 
 
 * With this cube, operations on multivariate spatio-temporal data can be thought of as slicing and dicing on the cube. 
 
-* While the data cube model is conceptually convenient for spatio-temporal data, it is not sufficiently rich for data wrangling. 
+* While the data cube model is conceptually convenient, for data wrangling the array structure may not sufficiently rich, for example, to wrangle special date time classes.
 
-* Arrays are efficient for computing on numerical values, wrangling special date time classes can be difficult. 
-
-* Thus for the convenient wrangling, we have designed a new spatio-temporal class, called cubble
-
+* Now I will demonstrate how cubble organises spatio-temporal data 
 
 ---
 
@@ -311,17 +311,15 @@ knitr::include_graphics("figures/long-nested-form.png")
 
 ???
 
-* The way cubble work is to organise the data in two forms
-
-* Here I use two colors to represent the spatial and temporal variables
+* The way cubble work is to organise spatial and temporal variables in two forms. The nested form for spatial variables and the long form for temporal variables.
 
 * The nested cubble has each site in a row 
 
-* It has spatial variables like longitude, latitude, among others and temporal variables all nested in a ts column. 
+* Spatial variables like longitude, latitude, among others can be directly accessed for wrangling. temporal variables are all nested in a list column called `ts`. 
 
-* In the long cubble, each row is identified by a combination of site and date. 
-  
-* spatial variables are stored separately as the data attributes, which I will later show you through the code
+* In the long cubble, each row is identified by a combination of site and date, similar to `tsibble`.
+
+* Temporal variables can be directly wrangled and spatial variables are stored as a data attribute, which I will show you shortly in the code.
   
 ---
 # Switching focus between time and space
@@ -797,11 +795,13 @@ class: inverse,  middle
 
 Slides created via the R package [.inverse-code[xaringan]](https://github.com/yihui/xaringan) and [.inverse-code[xaringanthemer]](https://github.com/gadenbuie/xaringanthemer), available at 
 
-.center[https://sherryzhang-user2022.netlify.app]
+.inverse-code[https://sherryzhang-user2022.netlify.app]
 
 <br>
 
-.inverse-code[`r fontawesome::fa("link")`] Install the latest version of cubble: remotes::install_github("huizezhang-sherry/cubble")
+.inverse-code[`r fontawesome::fa("link")`] Install the latest version of cubble:
+
+.inverse-code[remotes::install_github("huizezhang-sherry/cubble")]
 
 <br>
 

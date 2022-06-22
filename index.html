@@ -20,7 +20,7 @@ class: center, middle, inverse, title-slide
 # cubble: An R Package for Organizing and Wrangling Multivariate Spatio-temporal Data
 ]
 .author[
-### <div class="line-block">Sherry Zhang<br />
+### <div class="line-block">H. Sherry Zhang<br />
 <br />
 Joint work with Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langrené<br />
 <br />
@@ -42,13 +42,14 @@ Joint work with Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langren
 
 # Spatial data
 
+
 .pull-left[
 
 
 
 
 ```r
-stations_sf 
+stations_sf
 ```
 
 ```
@@ -78,22 +79,19 @@ Geodetic CRS:  GDA94
 
 ]
 
+
+
 ???
 
 * Thanks everyone for coming 
 
 * The title of my talk today is
 
-* In my supervisor team are
+* Here is the link to this slide and the link now is also available in the chat. 
 
-* Here is the link to this slides, in case you would like to go back and forth while I'm talking
+* Spatial data are a common type of data and here there are 59 weather stations distributed in New South Wales and Victoria in Australia
 
-* Spatial data is common and here is a [...]
-
-* The sf class uses a list column to store the feature geometries, including points, lines, polygons, multipolygons
-
-* With the sf class, we can do various geometrical operations in the space
-
+* The data are organised in an `sf` class and the package `sf` provides various geometrical operations in the space for this class 
 ---
 
 # Temporal data
@@ -131,11 +129,13 @@ ts
 
 ???
 
-* Temporal data is also common 
+* Temporal data are another common data type 
 
-* Here we have an object named `ts`, which contains ...
+* Here I'm showing you some historical daily temperature data for those 59 stations. 
 
-* It is stored in a `tsibble` class with `id` as the key to define each series and `date` as the index to define the time stamp. 
+* On the right, a fraction of the data in year 2020 is plotted
+
+* This data is stored in a `tsibble` class, with `id` as the key to define each series and `date` as the index to define the time stamp. 
 
 * With the `tsibble` class, you can do many temporal wrangling and build temporal models. 
 
@@ -143,7 +143,7 @@ ts
 
 # Spatio-temporal data 
 
-When left joining an `sf` object with a `tsibble`, the `tsibble` class gets lost: 
+When left joining an `sf` object with a `tsibble` object, the `tsibble` class (`tbl_ts`) gets lost: 
 
 
 ```r
@@ -169,20 +169,23 @@ class(out2)
 
 ???
 
+* However, spatial objects and temporal objects do not naturally work well together for spatio-temporal analysis. 
 
-* However, these spatial objects and temporal objects are punching each other's face when combined together for spatio-temporal analysis. 
-* Here if I join ...
+* Here let me give you some examples
 
-* if I join it ...
+* If I join an sf object with a tsibble object, the tsibble class would gets lost
+
+* The `sf` class gets lost, if the data is joined in the other way around,
 
 ---
 
 # Multivariate spatio-temporal data
 
-You can manually coerce the joined object to have both classes:
+You can manually enforce the joined object to have both classes:
 
 
 ```r
+out2 &lt;- ts %&gt;% left_join(stations_sf, by = "id")
 out3 &lt;- out2 %&gt;% st_as_sf()
 class(out3)
 ```
@@ -205,13 +208,17 @@ class(out4)
 
 ???
 
-* There is ways to enforce both the `tsibble` and `sf` class in the data object. 
+* We can manually enforce the joined object to have both classes  with the function `st_as_sf()`
 
-* But the class label can still get lost when using operations from one class. 
+* But the class label can still get lost during operations.
 
 * Here I use a tsibble function `fill_gaps` and the output no longer has the `sf` class
 
-* Also, taking a step back, a simple join of the spatial and temporal data is not the best way to structure spatio-temporal data since all the feature geometries are repeated multiple times, especially for long daily data.  
+* Also, taking a step back, the left join approach on spatial and temporal data is not necessarily the best way to structure spatio-temporal data 
+* This is because all the feature geometries are repeated multiple times, especially for long daily data, like the `ts` data I just show you.
+
+* This motivates a new data representation 
+
 ---
 class: center, inverse, middle
 
@@ -221,11 +228,9 @@ class: center, inverse, middle
 
 ???
 
-* This motivates a new data representation for spatio-temporal data
-
 * Today I will introduce a new data structure, called cubble, to organise spatio-temporal data. 
 
-* And we will see how wangling spatio-temporal data can be fun with cubble
+* And we will see how wangling the data with cubble can be fun 
 
 
 ---
@@ -237,26 +242,21 @@ class: center, inverse, middle
 
 ???
 
-* To think about spatio-temporal data conceptually, we introduce a multivariate spatio-temporal cube
+* Conceptually spatio-temporal data can be thought of as a data cube
 
-* Here the cube is defined slightly different from a conventional spatio-temporal cube. 
+* Here we define the cube slightly different from a conventional cube. The three axes are Time, Site, and Variable.
 
-* Rather than stacking spatial snapshots across time, here the cube has three axes: Time, Site, and Variable
+* The axis *Site* encompasses the coordinates longitude and latitude and longitude and we make an assumption that an entity has a fixed location. 
 
-* Here latitude and longitude only takes one dimension as **Site** and make an assumption that an entity has a fixed location. 
+* The axis **Variable** is used to represent multivariate information.
 
-* **Variable** is used to represent multivariate information in the spatio-temporal data. 
-
-* We define the data in this way to avoid introducing hypercubes for multivariate information. 
+* We define the data in this way to avoid introducing hypercubes for multivariate information in the conventional cube. 
 
 * With this cube, operations on multivariate spatio-temporal data can be thought of as slicing and dicing on the cube. 
 
-* While the data cube model is conceptually convenient for spatio-temporal data, it is not sufficiently rich for data wrangling. 
+* While the data cube model is conceptually convenient, for data wrangling the array structure may not sufficiently rich, for example, to wrangle special date time classes.
 
-* Arrays are efficient for computing on numerical values, wrangling special date time classes can be difficult. 
-
-* Thus for the convenient wrangling, we have designed a new spatio-temporal class, called cubble
-
+* Now I will demonstrate how cubble organises spatio-temporal data 
 
 ---
 
@@ -267,17 +267,15 @@ class: center, inverse, middle
 
 ???
 
-* The way cubble work is to organise the data in two forms
-
-* Here I use two colors to represent the spatial and temporal variables
+* The way cubble work is to organise spatial and temporal variables in two forms. The nested form for spatial variables and the long form for temporal variables.
 
 * The nested cubble has each site in a row 
 
-* It has spatial variables like longitude, latitude, among others and temporal variables all nested in a ts column. 
+* Spatial variables like longitude, latitude, among others can be directly accessed for wrangling. temporal variables are all nested in a list column called `ts`. 
 
-* In the long cubble, each row is identified by a combination of site and date. 
-  
-* spatial variables are stored separately as the data attributes, which I will later show you through the code
+* In the long cubble, each row is identified by a combination of site and date, similar to `tsibble`.
+
+* Temporal variables can be directly wrangled and spatial variables are stored as a data attribute, which I will show you shortly in the code.
   
 ---
 # Switching focus between time and space
@@ -389,7 +387,13 @@ attr(weather_long, "spatial")
 ```
 
 ```
+Simple feature collection with 59 features and 6 fields
+Geometry type: POINT
+Dimension:     XY
+Bounding box:  xmin: 141.2652 ymin: -39.1297 xmax: 153.3633 ymax: -28.9786
+Geodetic CRS:  GDA94
 # A tibble: 59 × 7
+# Rowwise:  id
   id           long   lat  elev name        wmo_id
   &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;        &lt;dbl&gt;
 1 ASN00047016  141. -34.0    43 lake victo…  94692
@@ -420,16 +424,16 @@ attr(weather_long, "spatial")
 
 ```
 
-# cubble:   id [59]: nested form
+# cubble:   id [59]: nested form [sf]
 # bbox:     [141.26, -39.13, 153.37, -28.97]
 # temporal: date [date], tmax [dbl]
   id           long   lat  elev name                     wmo_id            geometry ts      
   &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;                     &lt;dbl&gt;         &lt;POINT [°]&gt; &lt;list&gt;  
-1 ASN00047016  141. -34.0    43 lake victoria storage     94692 (141.2652 -34.0398) &lt;tibble&gt;
-2 ASN00047019  142. -32.4    61 menindee post office      94694 (142.4173 -32.3937) &lt;tibble&gt;
-3 ASN00048015  147. -30.0   115 brewarrina hospital       95512 (146.8651 -29.9614) &lt;tibble&gt;
-4 ASN00048027  146. -31.5   260 cobar mo                  94711  (145.8294 -31.484) &lt;tibble&gt;
-5 ASN00048031  149. -29.5   145 collarenebri (albert st)  95520 (148.5818 -29.5407) &lt;tibble&gt;
+1 ASN00047016  141. -34.0    43 lake victoria storage     94692 (141.2652 -34.0398) &lt;tbl_ts&gt;
+2 ASN00047019  142. -32.4    61 menindee post office      94694 (142.4173 -32.3937) &lt;tbl_ts&gt;
+3 ASN00048015  147. -30.0   115 brewarrina hospital       95512 (146.8651 -29.9614) &lt;tbl_ts&gt;
+4 ASN00048027  146. -31.5   260 cobar mo                  94711  (145.8294 -31.484) &lt;tbl_ts&gt;
+5 ASN00048031  149. -29.5   145 collarenebri (albert st)  95520 (148.5818 -29.5407) &lt;tbl_ts&gt;
 # … with 54 more rows
 
 ```
@@ -440,7 +444,7 @@ attr(weather_long, "spatial")
 
 ```
 
-[1] FALSE
+[1] TRUE
 
 ```
 ???
@@ -549,7 +553,8 @@ attr(weather_long, "spatial")
 3 ASN00047016 1971-01-03  27.5  141. -34.0
 4 ASN00047016 1971-01-04  30    141. -34.0
 5 ASN00047016 1971-01-05  34.4  141. -34.0
-# … with 1,099,047 more rows
+# … with 1,099,047 more rows, and 1 more variable:
+#   geometry &lt;POINT [°]&gt;
 
 ```
 ]
@@ -600,7 +605,7 @@ attr(weather_long, "spatial")
 
 
 
-&lt;code class ='r hljs remark-code'&gt;tmax &lt;- DATA %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#888090'&gt;{{filter NSW &amp; VIC stations}}&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_temporal()&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#BE7893'&gt;{{group by month and period (71-75, 16-20)}}&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#BE7893'&gt;{{summarise into monthly average}}&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_spatial()&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#888090'&gt;{{filter groups have no historical record}} &lt;/span&gt;%&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_temporal()&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;unfold(long, lat)&lt;/span&gt;&lt;br&gt;&lt;br&gt;tmax %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;ggplot(aes(x_minor = lubridate::month(date), &lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;y_minor = tmax, &lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;x_major = long, &lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;y_major = lat)) + &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;geom_glyph&lt;/span&gt;()&lt;/code&gt;
+&lt;code class ='r hljs remark-code'&gt;tmax &lt;- DATA %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#888090'&gt;{{filter NSW &amp; VIC stations}}&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_temporal()&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#BE7893'&gt;{{group by month and period (71-75, 16-20)}}&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#BE7893'&gt;{{summarise into monthly average}}&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_spatial()&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#888090'&gt;{{filter groups have no historical record}} &lt;/span&gt;%&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_temporal()&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;unfold(long, lat)&lt;/span&gt;&lt;br&gt;&lt;br&gt;tmax %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;ggplot(aes(x_minor = lubridate::month(date), &lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;y_minor = tmax, &lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;x_major = long, &lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;y_major = lat)) + &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;geom_glyph&lt;/span&gt;() + &lt;br&gt;&amp;nbsp;&amp;nbsp;...&lt;/code&gt;
 
 ]
 
@@ -608,7 +613,7 @@ attr(weather_long, "spatial")
 
 
 
-&lt;img src="index_files/figure-html/unnamed-chunk-33-1.png" width="504" style="display: block; margin: auto;" /&gt;
+&lt;img src="index_files/figure-html/unnamed-chunk-31-1.png" width="504" style="display: block; margin: auto;" /&gt;
 
 
 ]
@@ -662,11 +667,13 @@ class: inverse,  middle
 
 Slides created via the R package [.inverse-code[xaringan]](https://github.com/yihui/xaringan) and [.inverse-code[xaringanthemer]](https://github.com/gadenbuie/xaringanthemer), available at 
 
-.center[https://sherryzhang-user2022.netlify.app]
+.inverse-code[https://sherryzhang-user2022.netlify.app]
 
 &lt;br&gt;
 
-.inverse-code[<svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:currentColor;overflow:visible;position:relative;"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg>] Install the latest version of cubble: remotes::install_github("huizezhang-sherry/cubble")
+.inverse-code[<svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:currentColor;overflow:visible;position:relative;"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg>] Install the latest version of cubble:
+
+.inverse-code[remotes::install_github("huizezhang-sherry/cubble")]
 
 &lt;br&gt;
 
