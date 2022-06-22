@@ -59,7 +59,7 @@ Bounding box:  xmin: 141.2652 ymin: -39.1297 xmax: 153.3633 ymax: -28.9786
 Geodetic CRS:  GDA94
 # A tibble: 59 × 7
   id           long   lat  elev name        wmo_id
-* &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;        &lt;dbl&gt;
+ &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;        &lt;dbl&gt;
 1 ASN00047016  141. -34.0    43 lake victo…  94692
 2 ASN00047019  142. -32.4    61 menindee p…  94694
 3 ASN00048015  147. -30.0   115 brewarrina…  95512
@@ -89,9 +89,9 @@ Geodetic CRS:  GDA94
 
 * Here is the link to this slide and the link now is also available in the chat. 
 
-* Spatial data are a common type of data and here there are 59 weather stations distributed in New South Wales and Victoria in Australia
+* Spatial data is a common type of data and here there are 59 weather stations distributed in New South Wales and Victoria in Australia
 
-* The data are organised in an `sf` class and the package `sf` provides various geometrical operations in the space for this class 
+* The data is organised in an `sf` class and the package `sf` provides various geometrical operations in the space for this class 
 ---
 
 # Temporal data
@@ -129,15 +129,15 @@ ts
 
 ???
 
-* Temporal data are another common data type 
+* Temporal data is another common data type 
 
-* Here I'm showing you some historical daily temperature data for those 59 stations. 
+* Here I'm showing you some daily historical temperature data for those 59 stations. 
 
 * On the right, a fraction of the data in year 2020 is plotted
 
 * This data is stored in a `tsibble` class, with `id` as the key to define each series and `date` as the index to define the time stamp. 
 
-* With the `tsibble` class, you can do many temporal wrangling and build temporal models. 
+* The `tsibble` class allows you to  wrangle temporal data and build temporal models. 
 
 ---
 
@@ -175,7 +175,7 @@ class(out2)
 
 * If I join an sf object with a tsibble object, the tsibble class would gets lost
 
-* The `sf` class gets lost, if the data is joined in the other way around,
+* If we join the data the other way around, the `sf` class will get lost.
 
 ---
 
@@ -208,14 +208,15 @@ class(out4)
 
 ???
 
-* We can manually enforce the joined object to have both classes  with the function `st_as_sf()`
+* We can manually enforce the joined object to have both classes with the function `st_as_sf()`
 
 * But the class label can still get lost during operations.
 
-* Here I use a tsibble function `fill_gaps` and the output no longer has the `sf` class
+* Here I use a tsibble function `fill_gaps` and the result doesn't have the `sf` class
 
 * Also, taking a step back, the left join approach on spatial and temporal data is not necessarily the best way to structure spatio-temporal data 
-* This is because all the feature geometries are repeated multiple times, especially for long daily data, like the `ts` data I just show you.
+
+* This is because all the feature geometries are repeated multiple times, especially for long daily data, like the temporal data I just show you.
 
 * This motivates a new data representation 
 
@@ -254,7 +255,7 @@ class: center, inverse, middle
 
 * Operations on multivariate spatio-temporal data can be thought of as slicing and dicing on the cube. 
 
-* The data cube is conceptually convenient, but for data wrangling a 3D array structure may not sufficiently rich, for example, to wrangle special date time class.
+* Although The data cube is conceptually convenient, for data wrangling, a 3D array structure may not sufficiently rich, for example, to wrangle special date time classes.
 
 
 
@@ -277,7 +278,9 @@ class: center, inverse, middle
 
 * On the other hand, the long form cubble organises each row by a combination of site and date, similar to a `tsibble`.
 
-  * Temporal variables can be directly wrangled and spatial variables are stored as a data attribute, which I will show you shortly in the code.
+  * Temporal variables can be directly wrangled and
+  
+  * spatial variables are stored as a data attribute, which I will show you shortly in the code.
   
 ---
 # Switching focus between time and space
@@ -290,15 +293,15 @@ class: center, inverse, middle
 
 * We may also want to first calculate some temporal features and then investigate its spatial distribution.
 
-* These analysis would require switch between the nested form and the long form in a cubble
+* These analyses would require switch between the nested form and the long form in a cubble
 
 * The function `face_temporal()` turns a nested cubble into the long form and
 
-* We can first filter the location on the nested form and use `face_temporal()` to switch the data into the long form and thenmake temporal summaries
+* This can be used to first filter the location on the nested form and then use `face_temporal()` to switch the data into the long form and then make temporal summaries
 
 * The inverse of `face_temporal()` is `face_spatial()`, which switches the long cubble into a nested one
 
-* With `face_spatial()` we can first make some calculations on the tmeporal side and switch back to the nested form to view its spatial distribution on the map
+* With `face_spatial()` we can first make some calculations on the temporal side and switch back to the nested form to view its spatial distribution on the map
 
 ---
 
@@ -312,13 +315,13 @@ weather &lt;- as_cubble(list(spatial = stations_sf, temporal = ts),
 
 ???
 
-* Now I'm going to show you how to create a cubble from the two data earlier. 
+* Now I'm going to show you how to create a cubble from the two data we have 
 
 * Here you specify the two separate objects in a list with the name `spatial` and `temporal`. 
 
 * Then you can specify the `key` and the `index` as what you would do when creating a `tsibble`. 
 
-* The `coords` argument needs to be speicified in the order of longitude and latitude. 
+* The `coords` argument needs to be specified in the order of longitude and latitude. 
 
 --
 
@@ -350,7 +353,7 @@ weather &lt;- as_cubble(list(spatial = stations_sf, temporal = ts),
 
 ???
 
-* The header of a cubble tells you this data has 
+* The header of a cubble tells you that this data has 
 
 ---
 # Cubble summary (1/2)
@@ -389,7 +392,7 @@ weather &lt;- as_cubble(list(spatial = stations_sf, temporal = ts),
 
 ???
 
-* We can turn this object into the long form with `face_temporal()`
+* We can pivot this object into the long form with `face_temporal()`
 
 * Now the object `weather_long` is a long form cubble and it is a subclass of tsibble
 
@@ -471,7 +474,7 @@ Geodetic CRS:  GDA94
 
 * Here is the code example of using the function `face_spatial()` on the long form cubble
 
-* This would give us the identical nested cubble before switching to the long form
+* This would give us the nested cubble before making the switch to the long form
 
 ---
 
@@ -497,15 +500,35 @@ Geodetic CRS:  GDA94
 
 ???
 
-* Here is a comparison of the syntax using cubble and tidyverse dplyr for the same analysis
+* Here is a syntax comparison with and without cubble
 
-* With cubble, you can do some spatial analysis in the nested form, pivot ot the long form for some temporal analysis, and back to the nested form for some additional steps on spatial. 
+* With cubble, you can do some spatial analysis in the nested form, pivot it to the long form for some temporal analysis, and then pivot it back to the nested form for some additional spatial analysis. 
 
-* Without cubble, sometimes, you may need to extract some interesting stations after the spatial analysis and you will need to do some filter steps on your temporal data to keep both sheets updated. 
+* Sometimes, the spatial analysis include extracting some interesting sites.
 
-* You will need to do this similar manual spatial update 
+* Without cubble, you will need to first pull out those interesting ids, and then filter the temporal data on these sites.
 
-* while with cubble, once the data is subsetted in one form, it will automatically update in the other form. Also with cubble, all the operations can be piped into the next step with no intermediate objects floating around the workspace. 
+* Similar steps can also happen in the temporal analysis and the spatial data needs to be updated.
+
+* In cubble, these updates are automatically handled by `face_temporal()` and `face_spatial()` and no manual updates are needed.
+
+* Also the cubble pipeline chains all the operations together with no intermediate objects created in the workflow.
+
+---
+class: center, inverse, middle
+
+# Spatio-temporal analysis in cubble
+
+## A glyph map example
+
+???
+
+* Some analysis uses both spatial and temporal of variables at the same time. 
+
+* An example of this is making glyph maps.
+
+* Here I will first show you a toy example before rolling out to the full picture
+
 
 ---
 # Transform a dot into a glyph
@@ -514,15 +537,9 @@ Geodetic CRS:  GDA94
 
 ???
 
-* Some spatio-temporal analysis may involve both types of variables at the same time. 
+* A glyph map is a transformation of temporal coordinates into the spatial coordinates, so that temporal information can be visualised on the map.
 
-* An example of this is making glyph maps.
-
-* Here I'm going to show you how to transform a dot on the map into a glyph before giving out the full example
-
-* A glyph map is a transformation of temporal variables into space. 
-
-* Here I have a weather station on the map and its maximum temperature on each day in January 2020
+* Here I have one weather station on the map and its maximum temperature on each day in January 2020
 
 ---
 # Transform a dot into a glyph
@@ -531,9 +548,13 @@ Geodetic CRS:  GDA94
 
 ???
 
-* A glyph map transforms the coordinates in the time series plot into the spatial coordinates, so that temporal information can be visualised in a map
+* A glyph map uses linear algebra to make this transformation
 
-* In a glyph map, the coordinates of the time series plot are called the minor coordinates and the spatial coordinates are called the major coordinates.
+* You can see here the line in the bottom right plot does not change but its coordinates have been changed to the spatial coordinates
+
+* In a glyph map, the spatial coordinates are called the major coordinates and the temporal coordinates are the minor coordinates.
+
+* In the word of ggplot, we need four aesthetics to make a glyph map. Here they are longitude, latitude, date, and tmax.  
 
 ---
 
@@ -551,11 +572,10 @@ Geodetic CRS:  GDA94
 
 
 
+&lt;code class ='r hljs remark-code'&gt;cb_glyph &lt;- weather_long %&gt;% unfold(long, lat)&lt;/code&gt;
 
-&lt;code class ='r hljs remark-code'&gt;cb_glyph &lt;- weather_long %&gt;% unfold(long, lat)&lt;br&gt;cb_glyph&lt;/code&gt;
 
 ```
-
 # cubble:  date, id [59]: long form [tsibble]
 # bbox:    [141.26, -39.13, 153.37, -28.97]
 # spatial: long [dbl], lat [dbl], elev [dbl], name [chr],
@@ -567,9 +587,7 @@ Geodetic CRS:  GDA94
 3 ASN00047016 1971-01-03  27.5  141. -34.0
 4 ASN00047016 1971-01-04  30    141. -34.0
 5 ASN00047016 1971-01-05  34.4  141. -34.0
-# … with 1,099,047 more rows, and 1 more variable:
-#   geometry &lt;POINT [°]&gt;
-
+# … with 1,099,047 more rows
 ```
 
 
@@ -584,41 +602,47 @@ cb_glyph %&gt;%
 
 ???
 
-* All the four coordinate variables need to be in the same table to plot with ggplot2
+* To work with ggplot2, all the four variables need to be in the same table.
 
-* In cubble you can use the verb `unfold()` to relocate spatial variables into the long form. 
+* In cubble you can use the function `unfold()` to relocate spatial variables into the long form. 
 
-* Here I have the diagram illustration, cube transformation, and the code to show this function.
+* Here I have the diagram, cube, and the code to demonstrate this function.
 
-* After this step, the data can be piped into the ggplot with `geom_glyph()`, also from the cubble package, to draw the glyph map. 
+* This is how the data looks like after the unfold
+
+* After this, the data can be piped into the ggplot with the four aesthetics need for `geom_glyph()` to draw the glyph map. 
 
 
 ---
 
-# Example: Australian temperature
+# Example: Australian temperature comparison
 
 &lt;img src="figures/temperature-workflow.png" width="90%" height="530" style="display: block; margin: auto;" /&gt;
 
 ???
 
-* Now here is an full example that combines everything I have just introduced, to analyse historical temperature data with cubble. 
+* Now here is an full example that combines everything I have introduced in this talk, to analyse historical temperature data in Australia. 
 
-* All the stations I have shown you have maximum temperature dated back to the 70s, so we can compare the maximum temperature in the past and nowadays, also across space.
+* We have maximum temperature dated back to the 70s, which allows us to compare the maximum temperature between now and then, and also across space.
 
-* The diagram here shows how different steps in the data analysis can be chained together with cubble 
+* The diagram here shows each step needed in this analysis
 
-* Start with a created cubble, we can first filter out the NSW stations in the space, and then pivot to the long form to filter for the two time periods
+* The data I have shown you in this talk is a subset from all the weather stations in Australia and there are hundreds of them.
 
-* Then with the long form, the maximum temperature is summarised into monthly average
+* The first step here is to narrow it down to those in New South Wales and Victoria
 
-* In step 4 we switch back to the nested form to find that some stations don't have history records and drop those
+* Then we pivot it into the long form to select a historical segment (from 1971 - 1975) and a recent segment (from 2016 to 2020) in step 2. 
+  
+* In step 3, still in the long form, maximum temperature is summarised into monthly average in each period
 
-* In step 5, we switch to the long form again and migrate the longitude and latitude to prepare for the glyph map transformation. 
+* A quick check on the number of observations reveals that some stations don't have temperature recorded at both groups - look at id 4
 
-* And lastly the glyphmap transformation gives you a map.
+* We remove them in the nested form in step 4
+
+* In step 5 and 6 we unfold longitude and latitude with temporal variables and make the glyph map with `geom_glyph()`
 
 ---
-# Example: Australian temperature
+# Example: Australian temperature comparison
 
 .pull-left-larger[
 
@@ -627,7 +651,7 @@ cb_glyph %&gt;%
 
 
 
-&lt;code class ='r hljs remark-code'&gt;tmax &lt;- DATA %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#888090'&gt;{{filter NSW &amp; VIC stations}}&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_temporal()&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#BE7893'&gt;{{group by month and period (71-75, 16-20)}}&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#BE7893'&gt;{{summarise into monthly average}}&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_spatial()&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#888090'&gt;{{filter groups have no historical record}} &lt;/span&gt;%&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_temporal()&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;unfold(long, lat)&lt;/span&gt;&lt;br&gt;&lt;br&gt;tmax %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;ggplot(aes(x_minor = month, y_minor = tmax, &lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;x_major = long, y_major = lat)) + &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;geom_glyph&lt;/span&gt;() + &lt;br&gt;&amp;nbsp;&amp;nbsp;...&lt;/code&gt;
+&lt;code class ='r hljs remark-code'&gt;tmax &lt;- DATA %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#888090'&gt;{{filter NSW &amp; VIC stations}}&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_temporal()&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#BE7893'&gt;{{group by month and period (71-75, 16-20)}}&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#BE7893'&gt;{{summarise into monthly average}}&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_spatial()&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#888090'&gt;{{filter out sites with no historical record}} &lt;/span&gt;%&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_temporal()&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;unfold(long, lat)&lt;/span&gt;&lt;br&gt;&lt;br&gt;tmax %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;ggplot(aes(x_minor = month, y_minor = tmax, &lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;x_major = long, y_major = lat)) + &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;geom_glyph()&lt;/span&gt; + &lt;br&gt;&amp;nbsp;&amp;nbsp;...&lt;/code&gt;
 
 ]
 
@@ -635,21 +659,22 @@ cb_glyph %&gt;%
 
 
 
-&lt;img src="index_files/figure-html/unnamed-chunk-31-1.png" width="504" style="display: block; margin: auto;" /&gt;
+&lt;img src="index_files/figure-html/unnamed-chunk-32-1.png" width="504" style="display: block; margin: auto;" /&gt;
 
 
 ]
 
 ???
 
-* This is the code version of the previous diagram and the functions highlighted here are I developed in cubble
+* This is the code version of the diagram illustration 
 
-* In the plot, I show an enlarged legend of one station Cobar
+* Functions highlighted in light yellow are developed in the cubble package 
 
-* In each glyph, I plot the averaged maximum temperature for September to February for the two periods
+* Spatial operations are highlighted in purple and temporal ones in pink
 
-* One information I read from this plot is in the past, the average maximum temperature from December to February are almost the same, while these days, January stands out to be hotter for the inland stations
+* On the top left of the plot is a more annotated version of the glyph for one specific station Cobar.
 
+* Australia has a U-shape temperature curve and if you look carefully, the inland NSW stations has a noticeable higher average maximum temperature in January in recent years.
 
 
 
@@ -660,7 +685,11 @@ class: inverse, middle
 
 # More you can do with cubble
 
-* Pick up unmatched entries from the spatial and temporal inputs 
+* Pick up unmatched entries from the spatial and temporal inputs
+
+???
+
+There are more things cubble can do
 
 --
 
@@ -672,7 +701,7 @@ class: inverse, middle
 
 --
 
-* Input data can be of various forms, including .inverse-code[netCDF] and other .inverse-code[tibble variates] (i.e. grouped and rowwise data frame)
+* Input data can be of various forms, including a single combined data frame and netCDF
 
 ---
 background-image: url("figures/3cubes-in-one.png")
@@ -695,9 +724,21 @@ Slides created via the R package [.inverse-code[xaringan]](https://github.com/yi
 
 &lt;br&gt;
 
-H. Sherry Zhang [.inverse-code[<svg aria-hidden="true" role="img" viewBox="0 0 496 512" style="height:1em;width:0.97em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:currentColor;overflow:visible;position:relative;"><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>]](https://github.com/huizezhang-sherry)
+H. Sherry Zhang [.inverse-code[<svg aria-hidden="true" role="img" viewBox="0 0 496 512" style="height:1em;width:0.97em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:currentColor;overflow:visible;position:relative;"><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>]](https://github.com/huizezhang-sherry) [.inverse-code[<svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:currentColor;overflow:visible;position:relative;"><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg>]](https://twitter.com/huizezhangsh)
 
 Collaborators: Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langrené
+
+???
+
+* This wraps up my presentation today 
+
+* Cubble has already made its way to CRAN 
+
+* There has been some major changes made in the last few months and we plan to make an CRAN update very soon. 
+
+* So keep an eye on my github and twitter. 
+
+* Thanks for your time :)
 
 
 
