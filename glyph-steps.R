@@ -1,3 +1,4 @@
+library(tidyverse)
 library(ggsvg)
 library(patchwork)
 station_svg <- paste(readLines(here::here("figures/station-icon.svg")), collapse = "\n")
@@ -37,14 +38,11 @@ p1 <- ggplot() +
   scale_y_continuous(breaks = seq(-35, -33, 1))
   
 p2 <- stations_ts %>% 
+  mutate(date = lubridate::day(date)) %>% 
   ggplot(aes(x = date, y = tmax)) + 
   geom_line(color = "#443750") + 
   theme_bw() + 
-  theme(axis.line = element_line(color = "#840032"),
-        axis.text = element_text(color = "#840032"),
-        aspect.ratio = 0.3,
-        title =  element_text(color = "#840032")
-  )
+  theme()
 
 glyph <- stations_joined %>% 
   ggplot(aes(x_major = long, x_minor = as.numeric(date),
@@ -56,9 +54,9 @@ p3 <- layer_data(glyph) %>%
   geom_line(color = "#443750") + 
   theme_bw() + 
   theme(axis.line = element_line(color = "#840032"),
-        axis.text = element_text(color = "#840032"),
-        aspect.ratio = 0.3,
-        title =  element_text(color = "#840032")
+        axis.text = element_text(color = "#840032", size = 10),
+        title =  element_text(color = "#840032"), 
+        panel.border = element_rect(color = "#840032", size = 2)
   )
 
 p4 <- ggplot() + 
@@ -67,33 +65,24 @@ p4 <- ggplot() +
     data = stations_joined,
     aes(x_major = long, x_minor = as.numeric(date),
         y_major = lat, y_minor = tmax, color = as.factor(long)),
-    width = 1, height = 0.3, color= "#840032") + 
+    width = 1, height = 0.3, color= "#840032", size = 1.2) + 
   geom_glyph(
     data = stations_joined, 
     aes(x_major = long, x_minor = as.numeric(date),
         y_major = lat, y_minor = tmax, color = as.factor(long)),
     width = 1, height = 0.3) + 
-
   theme_bw() + 
   scale_color_manual(values = "#443750") + 
   coord_sf(xlim = c(140.5, 143), ylim = c(-35, -33)) + 
   scale_x_continuous(breaks = seq(140, 143, 1)) + 
   scale_y_continuous(breaks = seq(-35, -33, 1))
 
-g1 <- (p1 | plot_spacer()) / (plot_spacer() | plot_spacer()) + plot_layout(width = c(1,3), guides='collect') &
+g1 <- (p1 | p2) / (plot_spacer()| plot_spacer()) + plot_layout(width = c(1,1.5), guides='collect') &
   theme(legend.position='none')
 
-g2 <- (p1 | p2) / (plot_spacer()| plot_spacer()) + plot_layout(width = c(1,3), guides='collect') &
-  theme(legend.position='none')
-
-g3 <- ((p1 / plot_spacer()) | (p2 / p3))  + plot_layout(width = c(1,3), guides='collect') &
-  theme(legend.position='none')
-
-g4 <- (p1 | p2) / (p4 | p3) + plot_layout(guides='collect') &
+g2 <- (p1 | p2) / (p4 | p3) + plot_layout(guides='collect') &
   theme(legend.position='none')
 
 ggsave(g1, filename = here::here("figures/glyph-steps1.png"), height = 4)
 ggsave(g2, filename = here::here("figures/glyph-steps2.png"), height = 4)
-ggsave(g3, filename = here::here("figures/glyph-steps3.png"), height = 4)
-ggsave(g4, filename = here::here("figures/glyph-steps4.png"), height = 4)
 

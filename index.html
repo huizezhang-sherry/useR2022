@@ -58,14 +58,15 @@ Dimension:     XY
 Bounding box:  xmin: 141.2652 ymin: -39.1297 xmax: 153.3633 ymax: -28.9786
 Geodetic CRS:  GDA94
 # A tibble: 59 × 7
-  id           long   lat  elev name                     wmo_id            geometry
-* &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;                     &lt;dbl&gt;         &lt;POINT [°]&gt;
-1 ASN00047016  141. -34.0    43 lake victoria storage     94692 (141.2652 -34.0398)
-2 ASN00047019  142. -32.4    61 menindee post office      94694 (142.4173 -32.3937)
-3 ASN00048015  147. -30.0   115 brewarrina hospital       95512 (146.8651 -29.9614)
-4 ASN00048027  146. -31.5   260 cobar mo                  94711  (145.8294 -31.484)
-5 ASN00048031  149. -29.5   145 collarenebri (albert st)  95520 (148.5818 -29.5407)
-# … with 54 more rows
+  id           long   lat  elev name        wmo_id
+* &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;        &lt;dbl&gt;
+1 ASN00047016  141. -34.0    43 lake victo…  94692
+2 ASN00047019  142. -32.4    61 menindee p…  94694
+3 ASN00048015  147. -30.0   115 brewarrina…  95512
+4 ASN00048027  146. -31.5   260 cobar mo     94711
+5 ASN00048031  149. -29.5   145 collareneb…  95520
+# … with 54 more rows, and 1 more variable:
+#   geometry &lt;POINT [°]&gt;
 ```
 
 
@@ -496,53 +497,47 @@ Geodetic CRS:  GDA94
 
 ???
 
-* In summary, with cubble, you can perform temporal analysis in the long form, and pivot to the nested form for some spatial analysis, and pivot back to the the long form for some other temporal analysis. 
+* Here is a comparison of the syntax using cubble and tidyverse dplyr for the same analysis
 
-* Sometimes, you may also need to do some analysis that involves both spatial and temporal variables. 
+* With cubble, you can do some spatial analysis in the nested form, pivot ot the long form for some temporal analysis, and back to the nested form for some additional steps on spatial. 
 
-* Here I will show you how to do that in cubble with an example of making glyph maps.
+* Without cubble, sometimes, you may need to extract some interesting stations after the spatial analysis and you will need to do some filter steps on your temporal data to keep both sheets updated. 
 
----
-# Transform a dot into a glyph
+* You will need to do this similar manual spatial update 
 
-&lt;img src="figures/glyph-steps1.png" width="3255" style="display: block; margin: auto;" /&gt;
-
----
-# Transform a dot into a glyph
-
-&lt;img src="figures/glyph-steps2.png" width="3255" style="display: block; margin: auto;" /&gt;
+* while with cubble, once the data is subsetted in one form, it will automatically update in the other form. Also with cubble, all the operations can be piped into the next step with no intermediate objects floating around the workspace. 
 
 ---
 # Transform a dot into a glyph
 
-
-&lt;img src="figures/glyph-steps3.png" width="3255" style="display: block; margin: auto;" /&gt;
-
----
-# Transform a dot into a glyph
-
-&lt;img src="figures/glyph-steps4.png" width="3255" height="100%" style="display: block; margin: auto;" /&gt;
-
+&lt;img src="figures/glyph-steps1.png" width="3905" style="display: block; margin: auto;" /&gt;
 
 ???
 
+* Some spatio-temporal analysis may involve both types of variables at the same time. 
+
+* An example of this is making glyph maps.
+
+* Here I'm going to show you how to transform a dot on the map into a glyph before giving out the full example
+
 * A glyph map is a transformation of temporal variables into space. 
-* Here I have 5 locations, each has a time series. 
 
-* A glyph map transforms the scale of the time series into the spatial map, so that temporal information can be visualised in a map
+* Here I have a weather station on the map and its maximum temperature on each day in January 2020
 
-* To create a glyph map, you will need information on the spatial coordinates, longitude and latitude, which we call the major axes, and the temporal coordinates, date and value, the minor axes.
+---
+# Transform a dot into a glyph
+
+&lt;img src="figures/glyph-steps2.png" width="3905" style="display: block; margin: auto;" /&gt;
+
+???
+
+* A glyph map transforms the coordinates in the time series plot into the spatial coordinates, so that temporal information can be visualised in a map
+
+* In a glyph map, the coordinates of the time series plot are called the minor coordinates and the spatial coordinates are called the major coordinates.
+
 ---
 
 # Transformation to glyphmap
-
-&lt;!-- (context of problem): compare seasonal temperature for two periods  --&gt;
-
-&lt;!-- drop missing --&gt;
-&lt;!-- migrate  --&gt;
-&lt;!-- transform --&gt;
-
-&lt;!-- What if you want to work with  both spatial or temporal variables? --&gt;
 
 .pull-left[
 &lt;img src="figures/unfold.png" width="500" height="500" style="display: block; margin: auto;" /&gt;
@@ -557,7 +552,7 @@ Geodetic CRS:  GDA94
 
 
 
-&lt;code class ='r hljs remark-code'&gt;cb_migrated &lt;- weather_long %&gt;% unfold(long, lat)&lt;br&gt;cb_migrated&lt;/code&gt;
+&lt;code class ='r hljs remark-code'&gt;cb_glyph &lt;- weather_long %&gt;% unfold(long, lat)&lt;br&gt;cb_glyph&lt;/code&gt;
 
 ```
 
@@ -576,35 +571,43 @@ Geodetic CRS:  GDA94
 #   geometry &lt;POINT [°]&gt;
 
 ```
+
+
+```r
+cb_glyph %&gt;% 
+  ggplot(aes(x_major = long, y_major = lat, 
+             x_minor = date, y_minor = tmax)) + 
+  geom_glyph()
+```
+
 ]
 
 ???
 
-* In a cubble, the major coordinates are stored in the nested form, while minor coordinates are stored in the long form.  
+* All the four coordinate variables need to be in the same table to plot with ggplot2
 
 * In cubble you can use the verb `unfold()` to relocate spatial variables into the long form. 
 
-* This is in essence a join operation 
+* Here I have the diagram illustration, cube transformation, and the code to show this function.
 
-* On the right shows an example of unfold long and lat with the weather data.
+* After this step, the data can be piped into the ggplot with `geom_glyph()`, also from the cubble package, to draw the glyph map. 
+
 
 ---
 
 # Example: Australian temperature
 
-&lt;img src="figures/temperature-workflow.png" width="2560" style="display: block; margin: auto;" /&gt;
-
-
+&lt;img src="figures/temperature-workflow.png" width="90%" height="530" style="display: block; margin: auto;" /&gt;
 
 ???
 
-* Now combine everything I have just introduced, here is an example of using cubble to analyse historical temperature
+* Now here is an full example that combines everything I have just introduced, to analyse historical temperature data with cubble. 
 
-* The data used for this example has a similar structure as before has a long period that dated back to the 70s, so we can compare how the maximum temperature looks like in the past and nowadays
+* All the stations I have shown you have maximum temperature dated back to the 70s, so we can compare the maximum temperature in the past and nowadays, also across space.
 
 * The diagram here shows how different steps in the data analysis can be chained together with cubble 
 
-* Start with all Australia data, we can first filter out the NSW stations in the space, and then stretch to the long form to filter on the two time periods
+* Start with a created cubble, we can first filter out the NSW stations in the space, and then pivot to the long form to filter for the two time periods
 
 * Then with the long form, the maximum temperature is summarised into monthly average
 
@@ -615,7 +618,7 @@ Geodetic CRS:  GDA94
 * And lastly the glyphmap transformation gives you a map.
 
 ---
-
+# Example: Australian temperature
 
 .pull-left-larger[
 
@@ -624,7 +627,7 @@ Geodetic CRS:  GDA94
 
 
 
-&lt;code class ='r hljs remark-code'&gt;tmax &lt;- DATA %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#888090'&gt;{{filter NSW &amp; VIC stations}}&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_temporal()&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#BE7893'&gt;{{group by month and period (71-75, 16-20)}}&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#BE7893'&gt;{{summarise into monthly average}}&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_spatial()&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#888090'&gt;{{filter groups have no historical record}} &lt;/span&gt;%&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_temporal()&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;unfold(long, lat)&lt;/span&gt;&lt;br&gt;&lt;br&gt;tmax %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;ggplot(aes(x_minor = lubridate::month(date), &lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;y_minor = tmax, &lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;x_major = long, &lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;y_major = lat)) + &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;geom_glyph&lt;/span&gt;() + &lt;br&gt;&amp;nbsp;&amp;nbsp;...&lt;/code&gt;
+&lt;code class ='r hljs remark-code'&gt;tmax &lt;- DATA %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#888090'&gt;{{filter NSW &amp; VIC stations}}&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_temporal()&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#BE7893'&gt;{{group by month and period (71-75, 16-20)}}&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#BE7893'&gt;{{summarise into monthly average}}&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_spatial()&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#888090'&gt;{{filter groups have no historical record}} &lt;/span&gt;%&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;face_temporal()&lt;/span&gt; %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;unfold(long, lat)&lt;/span&gt;&lt;br&gt;&lt;br&gt;tmax %&gt;% &lt;br&gt;&amp;nbsp;&amp;nbsp;ggplot(aes(x_minor = month, y_minor = tmax, &lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;x_major = long, y_major = lat)) + &lt;br&gt;&amp;nbsp;&amp;nbsp;&lt;span style='background-color:#FFEECF'&gt;geom_glyph&lt;/span&gt;() + &lt;br&gt;&amp;nbsp;&amp;nbsp;...&lt;/code&gt;
 
 ]
 
@@ -632,7 +635,7 @@ Geodetic CRS:  GDA94
 
 
 
-&lt;img src="index_files/figure-html/unnamed-chunk-32-1.png" width="504" style="display: block; margin: auto;" /&gt;
+&lt;img src="index_files/figure-html/unnamed-chunk-31-1.png" width="504" style="display: block; margin: auto;" /&gt;
 
 
 ]
@@ -646,10 +649,6 @@ Geodetic CRS:  GDA94
 * In each glyph, I plot the averaged maximum temperature for September to February for the two periods
 
 * One information I read from this plot is in the past, the average maximum temperature from December to February are almost the same, while these days, January stands out to be hotter for the inland stations
-
-* Use the normal dplyr syntax to work with two tables, you will need to repeat the filter step two times, one on each table. But with cubble, once a filter on the nested form, it will also update the data in the long form. 
-
-* With dplyr syntax, there will be multiple intermediate objects created during the analysis, as we have seen before in the code comparison, but here, we can pipe through all the steps with only one object created. 
 
 
 

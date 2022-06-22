@@ -533,11 +533,15 @@ decorate("conv-code", eval = FALSE) %>%
 
 ???
 
-* In summary, with cubble, you can perform temporal analysis in the long form, and pivot to the nested form for some spatial analysis, and pivot back to the the long form for some other temporal analysis. 
+* Here is a comparison of the syntax using cubble and tidyverse dplyr for the same analysis
 
-* Sometimes, you may also need to do some analysis that involves both spatial and temporal variables. 
+* With cubble, you can do some spatial analysis in the nested form, pivot ot the long form for some temporal analysis, and back to the nested form for some additional steps on spatial. 
 
-* Here I will show you how to do that in cubble with an example of making glyph maps.
+* Without cubble, sometimes, you may need to extract some interesting stations after the spatial analysis and you will need to do some filter steps on your temporal data to keep both sheets updated. 
+
+* You will need to do this similar manual spatial update 
+
+* while with cubble, once the data is subsetted in one form, it will automatically update in the other form. Also with cubble, all the operations can be piped into the next step with no intermediate objects floating around the workspace. 
 
 ---
 # Transform a dot into a glyph
@@ -546,6 +550,18 @@ decorate("conv-code", eval = FALSE) %>%
 knitr::include_graphics(here::here("figures/glyph-steps1.png"))
 ```
 
+???
+
+* Some spatio-temporal analysis may involve both types of variables at the same time. 
+
+* An example of this is making glyph maps.
+
+* Here I'm going to show you how to transform a dot on the map into a glyph before giving out the full example
+
+* A glyph map is a transformation of temporal variables into space. 
+
+* Here I have a weather station on the map and its maximum temperature on each day in January 2020
+
 ---
 # Transform a dot into a glyph
 
@@ -553,41 +569,15 @@ knitr::include_graphics(here::here("figures/glyph-steps1.png"))
 knitr::include_graphics(here::here("figures/glyph-steps2.png")) 
 ```
 
----
-# Transform a dot into a glyph
-
-
-```{r}
-knitr::include_graphics(here::here("figures/glyph-steps3.png"))
-```
-
----
-# Transform a dot into a glyph
-
-```{r out.height="100%"}
-knitr::include_graphics(here::here("figures/glyph-steps4.png"))
-```
-
-
 ???
 
-* A glyph map is a transformation of temporal variables into space. 
-* Here I have 5 locations, each has a time series. 
+* A glyph map transforms the coordinates in the time series plot into the spatial coordinates, so that temporal information can be visualised in a map
 
-* A glyph map transforms the scale of the time series into the spatial map, so that temporal information can be visualised in a map
+* In a glyph map, the coordinates of the time series plot are called the minor coordinates and the spatial coordinates are called the major coordinates.
 
-* To create a glyph map, you will need information on the spatial coordinates, longitude and latitude, which we call the major axes, and the temporal coordinates, date and value, the minor axes.
 ---
 
 # Transformation to glyphmap
-
-<!-- (context of problem): compare seasonal temperature for two periods  -->
-
-<!-- drop missing -->
-<!-- migrate  -->
-<!-- transform -->
-
-<!-- What if you want to work with  both spatial or temporal variables? -->
 
 .pull-left[
 ```{r out.height=500, out.width = 500}
@@ -603,8 +593,8 @@ options(width = 60)
 
 
 ```{r unfold, eval = FALSE}
-cb_migrated <- weather_long %>% unfold(long, lat)
-cb_migrated
+cb_glyph <- weather_long %>% unfold(long, lat)
+cb_glyph
 ```
 
 
@@ -613,37 +603,44 @@ decorate_chunk("unfold") %>%
   flair("unfold()", background = "#FFEECF") %>% 
   knit_print.with_flair(width = 50)
 ```
+
+```{r eval = FALSE, echo = TRUE}
+cb_glyph %>% 
+  ggplot(aes(x_major = long, y_major = lat, 
+             x_minor = date, y_minor = tmax)) + 
+  geom_glyph()
+```
+
 ]
 
 ???
 
-* In a cubble, the major coordinates are stored in the nested form, while minor coordinates are stored in the long form.  
+* All the four coordinate variables need to be in the same table to plot with ggplot2
 
 * In cubble you can use the verb `unfold()` to relocate spatial variables into the long form. 
 
-* This is in essence a join operation 
+* Here I have the diagram illustration, cube transformation, and the code to show this function.
 
-* On the right shows an example of unfold long and lat with the weather data.
+* After this step, the data can be piped into the ggplot with `geom_glyph()`, also from the cubble package, to draw the glyph map. 
+
 
 ---
 
 # Example: Australian temperature
 
-```{r}
+```{r out.height=530, out.width="90%"}
 knitr::include_graphics(here::here("figures/temperature-workflow.png"))
 ```
 
-
-
 ???
 
-* Now combine everything I have just introduced, here is an example of using cubble to analyse historical temperature
+* Now here is an full example that combines everything I have just introduced, to analyse historical temperature data with cubble. 
 
-* The data used for this example has a similar structure as before has a long period that dated back to the 70s, so we can compare how the maximum temperature looks like in the past and nowadays
+* All the stations I have shown you have maximum temperature dated back to the 70s, so we can compare the maximum temperature in the past and nowadays, also across space.
 
 * The diagram here shows how different steps in the data analysis can be chained together with cubble 
 
-* Start with all Australia data, we can first filter out the NSW stations in the space, and then stretch to the long form to filter on the two time periods
+* Start with a created cubble, we can first filter out the NSW stations in the space, and then pivot to the long form to filter for the two time periods
 
 * Then with the long form, the maximum temperature is summarised into monthly average
 
@@ -654,7 +651,7 @@ knitr::include_graphics(here::here("figures/temperature-workflow.png"))
 * And lastly the glyphmap transformation gives you a map.
 
 ---
-
+# Example: Australian temperature
 
 .pull-left-larger[
 
@@ -672,10 +669,8 @@ tmax <- DATA %>%
   unfold(long, lat)
 
 tmax %>% 
-  ggplot(aes(x_minor = lubridate::month(date), 
-             y_minor = tmax, 
-             x_major = long, 
-             y_major = lat)) + 
+  ggplot(aes(x_minor = month, y_minor = tmax, 
+             x_major = long, y_major = lat)) + 
   geom_glyph() + 
   ...
 ```
@@ -748,9 +743,14 @@ p1 <- ggplot() +
              width = 1, height = 0.5) +
   scale_color_brewer("", palette = "Dark2") + 
   coord_sf(xlim = c(141, 154), ylim = c(-39, -28.5)) + 
-  ggthemes::theme_map() +
-  theme(legend.position = "bottom") +
-  labs(x = "Longitude", y = "Latitude")
+  theme_void() + 
+  #ggthemes::theme_map() +
+  theme(legend.position = "bottom", 
+        #legend.key.size = unit(3,"line"),
+        legend.text = element_text(size = 15)
+        ) + 
+  guides(color = guide_legend(override.aes = list(size=3)))
+ggsave(p1, file = "figures/glyph.png", dpi = "retina")
 
 box_df <- tmax |> face_spatial() |> filter(id == "ASN00048027")
 single <- tibble::tibble(img = here::here("figures/cobar-inset.png"))
@@ -776,10 +776,6 @@ p1 +
 * In each glyph, I plot the averaged maximum temperature for September to February for the two periods
 
 * One information I read from this plot is in the past, the average maximum temperature from December to February are almost the same, while these days, January stands out to be hotter for the inland stations
-
-* Use the normal dplyr syntax to work with two tables, you will need to repeat the filter step two times, one on each table. But with cubble, once a filter on the nested form, it will also update the data in the long form. 
-
-* With dplyr syntax, there will be multiple intermediate objects created during the analysis, as we have seen before in the code comparison, but here, we can pipe through all the steps with only one object created. 
 
 
 
