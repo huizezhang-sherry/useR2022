@@ -3,7 +3,6 @@
   <head>
     <title>cubble: An R Package for Organizing and Wrangling Multivariate Spatio-temporal Data</title>
     <meta charset="utf-8" />
-    <meta name="date" content="2022-06-23" />
     <script src="libs/header-attrs/header-attrs.js"></script>
     <script src="libs/fabric/fabric.min.js"></script>
     <link href="libs/xaringanExtra-scribble/scribble.css" rel="stylesheet" />
@@ -27,7 +26,7 @@ Joint work with Dianne Cook, Patricia Menéndez, Ursula Laa, and Nicolas Langren
 .pri[<a href="https://sherryzhang-user2022.netlify.app" class="uri">https://sherryzhang-user2022.netlify.app</a>]</div>
 ]
 .date[
-### 2022-06-23
+### 2022-06
 ]
 
 ---
@@ -230,7 +229,7 @@ class: center, inverse, middle
 
 * Today I will introduce a new data structure, called cubble, to organise spatio-temporal data. 
 
-* And we will see how wangling the data with cubble can be fun 
+* And we will see how data wangling with cubble can be fun 
 
 
 ---
@@ -244,19 +243,19 @@ class: center, inverse, middle
 
 * Conceptually spatio-temporal data can be thought of as a data cube
 
-* Here we define the cube slightly different from a conventional cube. The three axes are Time, Site, and Variable.
+* In this cube, the three axes are Time, Site, and Variable.
 
-* The axis *Site* encompasses the coordinates longitude and latitude and longitude and we make an assumption that an entity has a fixed location. 
+  * The axis **Site** defines the location of the entities
 
-* The axis **Variable** is used to represent multivariate information.
+  * The axis **Variable** is used to represent multivariate information.
 
-* We define the data in this way to avoid introducing hypercubes for multivariate information in the conventional cube. 
+  * We define our data cube slightly different from a conventional cube to avoid introducing hypercubes for multivariate information.
 
-* With this cube, operations on multivariate spatio-temporal data can be thought of as slicing and dicing on the cube. 
+* Operations on multivariate spatio-temporal data can be thought of as slicing and dicing on the cube. 
 
-* While the data cube model is conceptually convenient, for data wrangling the array structure may not sufficiently rich, for example, to wrangle special date time classes.
+* The data cube is conceptually convenient, but for data wrangling a 3D array structure may not sufficiently rich, for example, to wrangle special date time class.
 
-* Now I will demonstrate how cubble organises spatio-temporal data 
+
 
 ---
 
@@ -267,15 +266,17 @@ class: center, inverse, middle
 
 ???
 
-* The way cubble work is to organise spatial and temporal variables in two forms. The nested form for spatial variables and the long form for temporal variables.
+* Now I will demonstrate how cubble organises spatio-temporal data with two forms. 
 
-* The nested cubble has each site in a row 
+* The nested form organises each site in a row. 
 
-* Spatial variables like longitude, latitude, among others can be directly accessed for wrangling. temporal variables are all nested in a list column called `ts`. 
+  * Spatial variables fixed for each site can be directly wrangled. 
 
-* In the long cubble, each row is identified by a combination of site and date, similar to `tsibble`.
+  * Temporal variables varied across time are nested in a list column called `ts`. 
 
-* Temporal variables can be directly wrangled and spatial variables are stored as a data attribute, which I will show you shortly in the code.
+* On the other hand, the long form cubble organises each row by a combination of site and date, similar to a `tsibble`.
+
+  * Temporal variables can be directly wrangled and spatial variables are stored as a data attribute, which I will show you shortly in the code.
   
 ---
 # Switching focus between time and space
@@ -284,15 +285,19 @@ class: center, inverse, middle
 
 ???
 
-* Here is how you can switch between the nested and long form
+* In a spatio-temporal analysis, we may want to first subset a few location and then explore their temporal patterns.
 
-* The verb `face_temporal()` switches the nested cubble into the long form and
+* We may also want to first calculate some temporal features and then investigate its spatial distribution.
 
-* This change the focus from the spatial to temporal aspect and the resulting long form can be used to summarise the temporal aspect of the data.
+* These analysis would require switch between the nested form and the long form in a cubble
+
+* The function `face_temporal()` turns a nested cubble into the long form and
+
+* We can first filter the location on the nested form and use `face_temporal()` to switch the data into the long form and thenmake temporal summaries
 
 * The inverse of `face_temporal()` is `face_spatial()`, which switches the long cubble into a nested one
 
-* This changes the focus back to the spatial aspect and can be used to view the spatial distribution of variables on the map
+* With `face_spatial()` we can first make some calculations on the tmeporal side and switch back to the nested form to view its spatial distribution on the map
 
 ---
 
@@ -302,9 +307,20 @@ class: center, inverse, middle
 ```r
 weather &lt;- as_cubble(list(spatial = stations_sf, temporal = ts),
   key = id, index = date, coords = c(long, lat))
-
-weather
 ```
+
+???
+
+* Now I'm going to show you how to create a cubble from the two data earlier. 
+
+* Here you specify the two separate objects in a list with the name `spatial` and `temporal`. 
+
+* Then you can specify the `key` and the `index` as what you would do when creating a `tsibble`. 
+
+* The `coords` argument needs to be speicified in the order of longitude and latitude. 
+
+--
+
 
 ```
 # cubble:   id [59]: nested form [sf]
@@ -322,24 +338,18 @@ weather
 
 ???
 
-* Now I'm going to show you how to create a cubble from the spatial and temporal data we have seen before.
-
-* Here you specify the spatial and temporal object in a list with name `spatial` and `temporal`. 
-
-* Then you can specify the `key` and `index` as what you would do  when creating a `tsibble` and `coords` in the order of longitude and latitude. 
+* This creates a cubble in the nested form. 
 
 --
 
-- There are .sec[59] stations in this data, it is in the nested form and is a subclass of `sf` 
-- Temporal variables are `date`, and `tmax`. Spatial variables: `long, lat, elev, name`, and `wmo_id`
-- Each temporal component is a tsibble (`tbl_ts`) containing temporal information
+- .sec[59] stations, in the nested form, and is a subclass of `sf` 
+- The available temporal variables are `date` and `tmax` 
+- Also, each temporal component in the list column is a tsibble (`tbl_ts`)
 
 
 ???
 
-* By default, this create a nested cubble. 
-
-* There is a header summary on cubble objects, here it tells you
+* The header of a cubble tells you this data has 
 
 ---
 # Cubble summary (1/2)
@@ -371,11 +381,18 @@ weather
 
 ```
 
-  - now it is a long form cubble and is a subclass of `tsibble`
-  
+  - a long form cubble as the subclass of `tsibble` 
   - the third row now shows the spatial variables
 
 ]
+
+???
+
+* We can turn this object into the long form with `face_temporal()`
+
+* Now the object `weather_long` is a long form cubble and it is a subclass of tsibble
+
+* The third line in the header now changes to see the available spatial variables
 
 --
 
@@ -410,7 +427,9 @@ Geodetic CRS:  GDA94
 
 ???
 
-* This is what the long cubble looks like
+* The spatial variables are stored in the `spatial` attribute, which you can see through this command.  
+
+* Here it is stored as an sf object
 
 ---
 # Cubble summary (2/2)
@@ -449,9 +468,9 @@ Geodetic CRS:  GDA94
 ```
 ???
 
-* An example of face_spatial() is shown here where you can get the long form back to the nested form. 
+* Here is the code example of using the function `face_spatial()` on the long form cubble
 
-* And the output will be identical to the initial cubble `weather` data we created earlier
+* This would give us the identical nested cubble before switching to the long form
 
 ---
 
@@ -613,7 +632,7 @@ Geodetic CRS:  GDA94
 
 
 
-&lt;img src="index_files/figure-html/unnamed-chunk-31-1.png" width="504" style="display: block; margin: auto;" /&gt;
+&lt;img src="index_files/figure-html/unnamed-chunk-32-1.png" width="504" style="display: block; margin: auto;" /&gt;
 
 
 ]
